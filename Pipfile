@@ -1,0 +1,16 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+ffmpeg-python = "*"
+peewee = "*"
+python-telegram-bot = "*"
+requests = "*"
+
+[dev-packages]
+fabric = "*"
+
+[requires]
+python_version = "3.7"
