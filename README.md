@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Telegram Bot that converts _(for now)_ sent OPUS files to voice messages. The bot currently runs as [@FileConvertBot](https://t.me/FileConvertBot).
+Telegram Bot that converts _(for now)_ sent OPUS or MP3 files to voice messages. The bot currently runs as [@FileConvertBot](https://t.me/FileConvertBot).
 
 ## Getting Started
 

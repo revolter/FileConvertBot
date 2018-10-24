@@ -97,28 +97,39 @@ def message_handler(bot, update):
     message_id = message.message_id
     chat_id = message.chat.id
     user = message.from_user
-    document = message.document
+    attachment = message.effective_attachment
 
-    input_file_id = document.file_id
-    input_file_name = document.file_name
+    input_file_id = attachment.file_id
+    input_file_name = attachment.file_name if getattr(attachment, 'file_name', None) else attachment.title
 
     analytics.track(AnalyticsType.MESSAGE, user)
 
     input_file = bot.get_file(input_file_id)
+    input_file_path = input_file.file_path
 
-    probe = ffmpeg.probe(input_file.file_path)
-
-    opus_stream = next((stream for stream in probe['streams'] if stream['codec_name'] == 'opus'), None)
-
-    if opus_stream is None:
-        return
-
-    bot.send_chat_action(chat_id, ChatAction.UPLOAD_AUDIO)
+    probe = ffmpeg.probe(input_file_path)
 
     with io.BytesIO() as input_bytes:
-        input_file.download(out=input_bytes)
+        for stream in probe['streams']:
+            codec_name = stream['codec_name']
 
-        input_bytes.seek(0)
+            if codec_name == 'mp3':
+                opus_bytes = ffmpeg.input(input_file_path).output('pipe:', format='opus', strict='-2').run(capture_stdout=True)[0]
+
+                input_bytes.write(opus_bytes)
+                input_bytes.seek(0)
+
+                break
+            elif codec_name == 'opus':
+                input_file.download(out=input_bytes)
+
+                input_bytes.seek(0)
+
+                break
+            else:
+                return
+
+        bot.send_chat_action(chat_id, ChatAction.UPLOAD_AUDIO)
 
         bot.send_voice(
             chat_id,
@@ -143,7 +154,7 @@ def main():
     dispatcher.add_handler(CommandHandler('logs', logs_command_handler))
     dispatcher.add_handler(CommandHandler('users', users_command_handler))
 
-    dispatcher.add_handler(MessageHandler(Filters.document, message_handler))
+    dispatcher.add_handler(MessageHandler(Filters.audio | Filters.document, message_handler))
 
     dispatcher.add_error_handler(error_handler)
 
