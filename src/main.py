@@ -117,19 +117,18 @@ def message_handler(bot, update):
                 opus_bytes = ffmpeg.input(input_file_path).output('pipe:', format='opus', strict='-2').run(capture_stdout=True)[0]
 
                 input_bytes.write(opus_bytes)
-                input_bytes.seek(0)
 
                 break
             elif codec_name == 'opus':
                 input_file.download(out=input_bytes)
-
-                input_bytes.seek(0)
 
                 break
             else:
                 return
 
         bot.send_chat_action(chat_id, ChatAction.UPLOAD_AUDIO)
+
+        input_bytes.seek(0)
 
         bot.send_voice(
             chat_id,
