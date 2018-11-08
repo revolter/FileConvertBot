@@ -30,6 +30,9 @@ class User(BaseModel):
     telegram_id = BigIntegerField(unique=True)
     telegram_username = TextField()
 
+    def get_description(self):
+        return '{0.telegram_id} | {0.telegram_username}'.format(self)
+
     @classmethod
     def create_user(cls, id, username):
         current_date_time = datetime.now()
@@ -61,7 +64,7 @@ class User(BaseModel):
 
         try:
             for user in cls.select():
-                users_table = '{0}\n{1.telegram_id} | @{1.telegram_username} | {1.created_at}'.format(users_table, user)
+                users_table = '{}\n{} | {}'.format(users_table, user.get_description(), user.created_at)
         except PeeweeException:
             pass
 
