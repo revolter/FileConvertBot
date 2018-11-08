@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from datetime import datetime
+
 import argparse
 import configparser
 import io
@@ -102,6 +104,12 @@ def message_handler(bot, update):
 
     input_file_id = attachment.file_id
     input_file_name = attachment.file_name if getattr(attachment, 'file_name', None) else attachment.title
+
+    db_user = User.get_user_by_telegram_id(user.id)
+
+    if db_user:
+        db_user.updated_at = datetime.now()
+        db_user.save()
 
     analytics.track(AnalyticsType.MESSAGE, user)
 

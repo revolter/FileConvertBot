@@ -43,6 +43,15 @@ class User(BaseModel):
         return '[{0.telegram_id}](tg://user?id={0.telegram_id}) | `{1}`'.format(self, username)
 
     @classmethod
+    def get_user_by_telegram_id(cls, id):
+        try:
+            return User.get(User.telegram_id == id)
+        except Exception as error:
+            logger.error('Database error: "{}" for id: {}'.format(error, id))
+
+            return None
+
+    @classmethod
     def create_user(cls, id, username):
         current_date_time = datetime.now()
 
@@ -63,7 +72,7 @@ class User(BaseModel):
             if is_created:
                 return db_user
         except PeeweeException as error:
-            logger.error('Database error: {} for id: {} and username: {}'.format(error, id, username))
+            logger.error('Database error: "{}" for id: {} and username: {}'.format(error, id, username))
 
         return None
 
