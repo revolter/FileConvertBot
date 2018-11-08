@@ -105,6 +105,8 @@ def message_handler(bot, update):
 
     analytics.track(AnalyticsType.MESSAGE, user)
 
+    bot.send_chat_action(chat_id, ChatAction.TYPING)
+
     input_file = bot.get_file(input_file_id)
     input_file_path = input_file.file_path
 
@@ -125,6 +127,8 @@ def message_handler(bot, update):
 
                 break
             else:
+                bot.send_message(chat_id, 'File type "{}" is not yet supported.'.format(codec_name))
+
                 return
 
         bot.send_chat_action(chat_id, ChatAction.UPLOAD_AUDIO)
