@@ -72,8 +72,8 @@ class User(BaseModel):
         users_table = ''
 
         try:
-            for user in cls.select():
-                users_table = '{}\n{} | {}'.format(users_table, user.get_markdown_description(), user.created_at)
+            for index, user in enumerate(cls.select()):
+                users_table = '{}\n{}. | {} | {}'.format(users_table, index + 1, user.get_markdown_description(), user.created_at)
         except PeeweeException:
             pass
 
