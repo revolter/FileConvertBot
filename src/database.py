@@ -37,8 +37,10 @@ class User(BaseModel):
     telegram_id = BigIntegerField(unique=True)
     telegram_username = TextField(null=True)
 
-    def get_description(self):
-        return '{0.telegram_id} | {0.telegram_username}'.format(self)
+    def get_markdown_description(self):
+        username = '@{}'.format(self.telegram_username) if self.telegram_username else 'n/a'
+
+        return '[{0.telegram_id}](tg://user?id={0.telegram_id}) | `{1}`'.format(self, username)
 
     @classmethod
     def create_user(cls, id, username):
@@ -71,7 +73,7 @@ class User(BaseModel):
 
         try:
             for user in cls.select():
-                users_table = '{}\n{} | {}'.format(users_table, user.get_description(), user.created_at)
+                users_table = '{}\n{} | {}'.format(users_table, user.get_markdown_description(), user.created_at)
         except PeeweeException:
             pass
 

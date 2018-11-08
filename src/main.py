@@ -19,7 +19,7 @@ error_logging_handler.setLevel(logging.ERROR)
 
 logging.getLogger().addHandler(error_logging_handler)
 
-from telegram import ChatAction
+from telegram import ChatAction, ParseMode
 from telegram.ext import (
     CommandHandler, MessageHandler,
     Filters, Updater
@@ -51,7 +51,7 @@ def start_command_handler(bot, update):
     db_user = User.create_user(user.id, user.username)
 
     if db_user and ADMIN_USER_ID:
-        bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_description()))
+        bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_markdown_description()), parse_mode=ParseMode.MARKDOWN)
 
     bot.send_message(chat_id, 'Send me an audio file to convert it to a voice message.')
 
@@ -89,7 +89,7 @@ def users_command_handler(bot, update):
     if not check_admin(bot, message, analytics, ADMIN_USER_ID):
         return
 
-    bot.send_message(chat_id, User.get_users_table())
+    bot.send_message(chat_id, User.get_users_table(), parse_mode=ParseMode.MARKDOWN)
 
 
 def message_handler(bot, update):
