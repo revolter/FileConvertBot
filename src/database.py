@@ -13,6 +13,8 @@ from peewee import (
 from peewee_migrate import Migrator, Router
 from playhouse.sqlite_ext import SqliteExtDatabase
 
+from constants import GENERIC_DATE_FORMAT
+
 logger = logging.getLogger(__name__)
 
 database = SqliteExtDatabase('file_convert.sqlite')
@@ -41,6 +43,12 @@ class User(BaseModel):
         username = '@{}'.format(self.telegram_username) if self.telegram_username else 'n/a'
 
         return '[{0.telegram_id}](tg://user?id={0.telegram_id}) | `{1}`'.format(self, username)
+
+    def get_created_at(self):
+        return self.created_at.strftime(GENERIC_DATE_FORMAT)
+
+    def get_updated_at(self):
+        return self.updated_at.strftime(GENERIC_DATE_FORMAT)
 
     @classmethod
     def get_user_by_telegram_id(cls, id):
@@ -82,7 +90,15 @@ class User(BaseModel):
 
         try:
             for index, user in enumerate(cls.select()):
-                users_table = '{}\n{}. | {} | {}'.format(users_table, index + 1, user.get_markdown_description(), user.created_at)
+                users_table = '{}\n{}. | {} | {} | {}'.format(
+                    users_table,
+                    index + 1,
+
+                    user.get_markdown_description(),
+
+                    user.get_created_at(),
+                    user.get_updated_at()
+                )
         except PeeweeException:
             pass
 

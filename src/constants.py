@@ -6,3 +6,5 @@ GOOGLE_HEADERS = {'User-Agent': 'FileConvertBot'}
 GOOGLE_ANALYTICS_BASE_URL = 'https://www.google-analytics.com/collect?v=1&t=event&tid={}&cid={}&ec={}&ea={}'
 
 LOGS_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+
+GENERIC_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
