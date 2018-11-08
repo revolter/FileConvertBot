@@ -63,7 +63,7 @@ class User(BaseModel):
             if is_created:
                 return db_user
         except PeeweeException as error:
-            logger.error('Database error: {}'.format(error))
+            logger.error('Database error: {} for id: {} and username: {}'.format(error, id, username))
 
         return None
 
