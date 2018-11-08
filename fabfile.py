@@ -34,6 +34,9 @@ env.meta_filenames = [
     'Pipfile',
     'Pipfile.lock'
 ]
+env.source_directories = [
+    'migrations'
+]
 
 
 @task
@@ -76,6 +79,13 @@ def deploy(context, type='source', filename=None):
 
         for filename in env.meta_filenames:
             context.put(filename, '{.project_name}/'.format(env))
+
+        for directory in env.source_directories:
+            execute(context, 'mkdir -p {.project_name}/{}'.format(env, directory))
+
+            for _, _, files in os.walk('src/{}'.format(directory)):
+                for file in files:
+                    context.put('src/{}/{}'.format(directory, file), '{.project_name}/{}/{}'.format(env, directory, file))
 
         with context.cd(env.project_name):
             execute(context, 'python -m pipenv install --three')

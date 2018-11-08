@@ -10,11 +10,18 @@ from peewee import (
     DateTimeField, TextField, BigIntegerField,
     PeeweeException
 )
+from peewee_migrate import Migrator, Router
 from playhouse.sqlite_ext import SqliteExtDatabase
 
 logger = logging.getLogger(__name__)
 
 database = SqliteExtDatabase('file_convert.sqlite')
+
+database.connect()
+
+migrator = Migrator(database)
+
+router = Router(database, migrate_table='migration', logger=logger)
 
 
 class BaseModel(Model):
@@ -28,7 +35,7 @@ class BaseModel(Model):
 class User(BaseModel):
     id = TextField(primary_key=True, unique=True, default=uuid4)
     telegram_id = BigIntegerField(unique=True)
-    telegram_username = TextField()
+    telegram_username = TextField(null=True)
 
     def get_description(self):
         return '{0.telegram_id} | {0.telegram_username}'.format(self)
@@ -73,6 +80,7 @@ class User(BaseModel):
 
         return users_table
 
-database.connect()
+migrator.create_table(User)
 
-User.create_table(True)
+router.migrator = migrator
+router.run()
