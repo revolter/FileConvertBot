@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 ffmpeg-python = "*"
 peewee = "*"
+peewee-migrate = "*"
 python-telegram-bot = "*"
 requests = "*"
 
