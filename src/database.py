@@ -13,7 +13,7 @@ from peewee import (
 from peewee_migrate import Migrator, Router
 from playhouse.sqlite_ext import SqliteExtDatabase
 
-from constants import GENERIC_DATE_FORMAT
+from constants import GENERIC_DATE_TIME_FORMAT
 
 logger = logging.getLogger(__name__)
 
@@ -45,10 +45,10 @@ class User(BaseModel):
         return '[{0.telegram_id}](tg://user?id={0.telegram_id}) | `{1}`'.format(self, username)
 
     def get_created_at(self):
-        return self.created_at.strftime(GENERIC_DATE_FORMAT)
+        return self.created_at.strftime(GENERIC_DATE_TIME_FORMAT)
 
     def get_updated_at(self):
-        return self.updated_at.strftime(GENERIC_DATE_FORMAT)
+        return self.updated_at.strftime(GENERIC_DATE_TIME_FORMAT)
 
     @classmethod
     def get_user_by_telegram_id(cls, id):
