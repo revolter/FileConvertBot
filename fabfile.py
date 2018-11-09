@@ -1,9 +1,13 @@
+from datetime import datetime
+
 import configparser
 import os
 import sys
 
 from fabric import task
 from invoke import env
+
+from src.constants import GENERIC_DATE_FORMAT
 
 try:
     config = configparser.ConfigParser()
@@ -97,9 +101,12 @@ def deploy(context, type='source', filename=None):
 
 @task(pre=[config], hosts=env.hosts, help={'filename': 'The filename to backup locally from the server'})
 def backup(context, filename):
+    current_date = datetime.now().strftime(GENERIC_DATE_FORMAT)
+    name, extension = os.path.splitext(filename)
+
     # This currently does nothing: http://www.fabfile.org/upgrading.html?highlight=cd#actual-remote-steps.
     with context.cd(env.project_name):
-        context.get('{.project_name}/{}'.format(env, filename), 'backup_{}'.format(filename))
+        context.get('{.project_name}/{}'.format(env, filename), 'backup_{}_{}{}'.format(name, current_date, extension))
 
 
 @task(pre=[config], hosts=env.hosts)

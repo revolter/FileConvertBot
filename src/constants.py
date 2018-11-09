@@ -7,4 +7,5 @@ GOOGLE_ANALYTICS_BASE_URL = 'https://www.google-analytics.com/collect?v=1&t=even
 
 LOGS_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
-GENERIC_DATE_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+GENERIC_DATE_FORMAT = '%Y-%m-%d'
+GENERIC_DATE_TIME_FORMAT = '{} %H:%M:%S'.format(GENERIC_DATE_FORMAT)
