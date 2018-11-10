@@ -11,7 +11,7 @@ from peewee import (
     PeeweeException
 )
 from peewee_migrate import Migrator, Router
-from playhouse.sqlite_ext import SqliteExtDatabase
+from playhouse.sqlite_ext import RowIDField, SqliteExtDatabase
 
 from constants import GENERIC_DATE_TIME_FORMAT
 
@@ -27,6 +27,8 @@ router = Router(database, migrate_table='migration', logger=logger)
 
 
 class BaseModel(Model):
+    rowid = RowIDField()
+
     created_at = DateTimeField(default=datetime.now)
     updated_at = DateTimeField()
 
@@ -35,14 +37,14 @@ class BaseModel(Model):
 
 
 class User(BaseModel):
-    id = TextField(primary_key=True, unique=True, default=uuid4)
+    id = TextField(primary_key=False, unique=True, default=uuid4)
     telegram_id = BigIntegerField(unique=True)
     telegram_username = TextField(null=True)
 
     def get_markdown_description(self):
         username = '@{}'.format(self.telegram_username) if self.telegram_username else 'n/a'
 
-        return '[{0.telegram_id}](tg://user?id={0.telegram_id}) | `{1}`'.format(self, username)
+        return '{0.rowid}. | [{0.telegram_id}](tg://user?id={0.telegram_id}) | `{1}`'.format(self, username)
 
     def get_created_at(self):
         return self.created_at.strftime(GENERIC_DATE_TIME_FORMAT)
@@ -90,9 +92,8 @@ class User(BaseModel):
 
         try:
             for index, user in enumerate(cls.select()):
-                users_table = '{}\n{}. | {} | {} | {}'.format(
+                users_table = '{}\n{} | {} | {}'.format(
                     users_table,
-                    index + 1,
 
                     user.get_markdown_description(),
 
