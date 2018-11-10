@@ -54,12 +54,12 @@ def start_command_handler(bot, update):
     chat_id = message.chat_id
     user = message.from_user
 
-    analytics.track(AnalyticsType.COMMAND, user, '/start')
-
     db_user = User.create_user(user.id, user.username)
 
     if db_user and ADMIN_USER_ID:
         bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_markdown_description()), parse_mode=ParseMode.MARKDOWN)
+
+    analytics.track(AnalyticsType.COMMAND, user, '/start')
 
     bot.send_message(chat_id, 'Send me an audio file to convert it to a voice message.')
 
