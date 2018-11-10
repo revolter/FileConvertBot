@@ -65,7 +65,7 @@ class User(BaseModel):
     @classmethod
     def get_user_by_telegram_id(cls, id):
         try:
-            return User.get(User.telegram_id == id)
+            return cls.get(cls.telegram_id == id)
         except Exception as error:
             logger.error('Database error: "{}" for id: {}'.format(error, id))
 
@@ -101,7 +101,7 @@ class User(BaseModel):
         users_table = ''
 
         try:
-            for user in reversed(cls.select().order_by(User.created_at.desc()).limit(10)):
+            for user in reversed(cls.select().order_by(cls.created_at.desc()).limit(10)):
                 users_table = '{}\n{} | {} | {}'.format(
                     users_table,
 
