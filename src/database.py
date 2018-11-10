@@ -63,16 +63,7 @@ class User(BaseModel):
         return '{} ago'.format(time_ago)
 
     @classmethod
-    def get_user_by_telegram_id(cls, id):
-        try:
-            return cls.get(cls.telegram_id == id)
-        except Exception as error:
-            logger.error('Database error: "{}" for id: {}'.format(error, id))
-
-            return None
-
-    @classmethod
-    def create_user(cls, id, username):
+    def create_or_update_user(cls, id, username):
         current_date_time = get_current_datetime()
 
         try:

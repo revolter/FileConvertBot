@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from datetime import datetime
 from threading import Thread
 
 import argparse
@@ -48,16 +47,20 @@ def stop_and_restart():
     os.execl(sys.executable, sys.executable, *sys.argv)
 
 
+def create_or_update_user(bot, user):
+    db_user = User.create_or_update_user(user.id, user.username)
+
+    if db_user and ADMIN_USER_ID:
+            bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_markdown_description()), parse_mode=ParseMode.MARKDOWN)
+
+
 def start_command_handler(bot, update):
     message = update.message
 
     chat_id = message.chat_id
     user = message.from_user
 
-    db_user = User.create_user(user.id, user.username)
-
-    if db_user and ADMIN_USER_ID:
-        bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_markdown_description()), parse_mode=ParseMode.MARKDOWN)
+    create_or_update_user(bot, user)
 
     analytics.track(AnalyticsType.COMMAND, user, '/start')
 
@@ -109,11 +112,7 @@ def message_handler(bot, update):
     input_file_id = attachment.file_id
     input_file_name = attachment.file_name if getattr(attachment, 'file_name', None) else attachment.title
 
-    db_user = User.get_user_by_telegram_id(user.id)
-
-    if db_user:
-        db_user.updated_at = datetime.now()
-        db_user.save()
+    create_or_update_user(bot, user)
 
     analytics.track(AnalyticsType.MESSAGE, user)
 
