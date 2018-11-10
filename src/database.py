@@ -97,11 +97,20 @@ class User(BaseModel):
         return None
 
     @classmethod
-    def get_users_table(cls):
+    def get_users_table(cls, sorted_by_updated_at=False):
         users_table = ''
 
         try:
-            for user in reversed(cls.select().order_by(cls.created_at.desc()).limit(10)):
+            sort_field = cls.updated_at if sorted_by_updated_at else cls.created_at
+
+            query = cls.select()
+
+            if sorted_by_updated_at:
+                query = query.where(cls.created_at != cls.updated_at)
+
+            query = query.order_by(sort_field.desc()).limit(10)
+
+            for user in reversed(query):
                 users_table = '{}\n{} | {} | {}'.format(
                     users_table,
 

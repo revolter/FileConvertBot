@@ -88,14 +88,14 @@ def logs_command_handler(bot, update):
         bot.send_message(chat_id, 'Log is empty')
 
 
-def users_command_handler(bot, update):
+def users_command_handler(bot, update, args):
     message = update.message
     chat_id = message.chat_id
 
     if not check_admin(bot, message, analytics, ADMIN_USER_ID):
         return
 
-    bot.send_message(chat_id, User.get_users_table(), parse_mode=ParseMode.MARKDOWN)
+    bot.send_message(chat_id, User.get_users_table('updated' in args), parse_mode=ParseMode.MARKDOWN)
 
 
 def message_handler(bot, update):
@@ -166,7 +166,7 @@ def main():
 
     dispatcher.add_handler(CommandHandler('restart', restart_command_handler))
     dispatcher.add_handler(CommandHandler('logs', logs_command_handler))
-    dispatcher.add_handler(CommandHandler('users', users_command_handler))
+    dispatcher.add_handler(CommandHandler('users', users_command_handler, pass_args=True))
 
     dispatcher.add_handler(MessageHandler(Filters.audio | Filters.document, message_handler))
 
