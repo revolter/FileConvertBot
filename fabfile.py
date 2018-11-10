@@ -77,23 +77,26 @@ def setup(context):
 
 @task(pre=[config], hosts=env.hosts, help={'type': 'The type of the file to be deployed. Only required if `filename` is specified. Valid values are `source` and `meta`.', 'filename': 'An optional filename to deploy to the server'})
 def upload(context, type='source', filename=None):
+    def upload_file(file_path_format, filename, destination_path_format='{.project_name}/{}'):
+        context.put(file_path_format.format(filename), destination_path_format.format(env, filename))
+
     if not type or not filename:
         for filename in env.source_filenames:
-            context.put('src/{}'.format(filename), '{.project_name}/'.format(env))
+            upload_file('src/{}', filename)
 
         for filename in env.meta_filenames:
-            context.put(filename, '{.project_name}/'.format(env))
+            upload_file('{}', filename)
 
         for directory in env.source_directories:
             execute(context, 'mkdir -p {.project_name}/{}'.format(env, directory))
 
             for _, _, files in os.walk('src/{}'.format(directory)):
                 for file in files:
-                    context.put('src/{}/{}'.format(directory, file), '{.project_name}/{}/{}'.format(env, directory, file))
+                    upload_file('src/{}/{{}}'.format(directory), file, '{{.project_name}}/{}/{{}}'.format(directory))
     else:
         file_path_format = 'src/{}' if type == 'source' else '{}'
 
-        context.put(file_path_format.format(filename), '{.project_name}/'.format(env))
+        upload_file(file_path_format, filename)
 
 
 @task(pre=[config], hosts=env.hosts, help={'type': 'The type of the file to be deployed. Only required if `filename` is specified. Valid values are `source` and `meta`.', 'filename': 'An optional filename to deploy to the server'})
