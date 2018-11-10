@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from datetime import datetime
+
 GOOGLE_HEADERS = {'User-Agent': 'FileConvertBot'}
 
 #: See also: https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters
@@ -9,3 +11,5 @@ LOGS_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
 GENERIC_DATE_FORMAT = '%Y-%m-%d'
 GENERIC_DATE_TIME_FORMAT = '{} %H:%M:%S'.format(GENERIC_DATE_FORMAT)
+
+EPOCH_DATE = datetime(1970, 1, 1)

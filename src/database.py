@@ -13,7 +13,7 @@ from peewee import (
 from peewee_migrate import Migrator, Router
 from playhouse.sqlite_ext import RowIDField, SqliteExtDatabase
 
-from constants import GENERIC_DATE_TIME_FORMAT
+from constants import GENERIC_DATE_TIME_FORMAT, EPOCH_DATE
 
 logger = logging.getLogger(__name__)
 
@@ -53,8 +53,14 @@ class User(BaseModel):
     def get_created_at(self):
         return self.created_at.strftime(GENERIC_DATE_TIME_FORMAT)
 
-    def get_updated_at(self):
-        return self.updated_at.strftime(GENERIC_DATE_TIME_FORMAT)
+    def get_updated_ago(self):
+        if self.updated_at == self.created_at:
+            return '-'
+
+        delta_seconds = round((datetime.now() - self.updated_at).total_seconds())
+        time_ago = str(datetime.fromtimestamp(delta_seconds) - EPOCH_DATE)
+
+        return '{} ago'.format(time_ago)
 
     @classmethod
     def get_user_by_telegram_id(cls, id):
@@ -102,7 +108,7 @@ class User(BaseModel):
                     user.get_markdown_description(),
 
                     user.get_created_at(),
-                    user.get_updated_at()
+                    user.get_updated_ago()
                 )
         except PeeweeException:
             pass
