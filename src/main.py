@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from datetime import datetime
+from threading import Thread
 
 import argparse
 import configparser
@@ -9,7 +10,6 @@ import io
 import logging
 import os
 import sys
-import time
 
 from constants import LOGS_FORMAT
 
@@ -39,7 +39,13 @@ ADMIN_USER_ID = None
 
 logger = logging.getLogger(__name__)
 
+updater = None
 analytics = None
+
+
+def stop_and_restart():
+    updater.stop()
+    os.execl(sys.executable, sys.executable, *sys.argv)
 
 
 def start_command_handler(bot, update):
@@ -64,11 +70,9 @@ def restart_command_handler(bot, update):
     if not check_admin(bot, message, analytics, ADMIN_USER_ID):
         return
 
-    bot.send_message(message.chat_id, 'Restarting...' if cli_args.debug else 'Restarting in 1 second...')
+    bot.send_message(message.chat_id, 'Restarting...')
 
-    time.sleep(0.2 if cli_args.debug else 1)
-
-    os.execl(sys.executable, sys.executable, *sys.argv)
+    Thread(target=stop_and_restart).start()
 
 
 def logs_command_handler(bot, update):
@@ -156,8 +160,6 @@ def error_handler(bot, update, error):
 
 
 def main():
-    updater = Updater(BOT_TOKEN)
-
     dispatcher = updater.dispatcher
 
     dispatcher.add_handler(CommandHandler('start', start_command_handler))
@@ -248,6 +250,7 @@ if __name__ == '__main__':
 
         sys.exit(2)
 
+    updater = Updater(BOT_TOKEN)
     analytics = Analytics()
 
     try:
