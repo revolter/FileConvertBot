@@ -76,7 +76,7 @@ def setup(context):
 
 
 @task(pre=[config], hosts=env.hosts, help={'type': 'The type of the file to be deployed. Only required if `filename` is specified. Valid values are `source` and `meta`.', 'filename': 'An optional filename to deploy to the server'})
-def deploy(context, type='source', filename=None):
+def upload(context, type='source', filename=None):
     if not type or not filename:
         for filename in env.source_filenames:
             context.put('src/{}'.format(filename), '{.project_name}/'.format(env))
@@ -90,13 +90,18 @@ def deploy(context, type='source', filename=None):
             for _, _, files in os.walk('src/{}'.format(directory)):
                 for file in files:
                     context.put('src/{}/{}'.format(directory, file), '{.project_name}/{}/{}'.format(env, directory, file))
-
-        with context.cd(env.project_name):
-            execute(context, 'python -m pipenv install --three')
     else:
         file_path_format = 'src/{}' if type == 'source' else '{}'
 
         context.put(file_path_format.format(filename), '{.project_name}/'.format(env))
+
+
+@task(pre=[config], hosts=env.hosts, help={'type': 'The type of the file to be deployed. Only required if `filename` is specified. Valid values are `source` and `meta`.', 'filename': 'An optional filename to deploy to the server'})
+def deploy(context, type='source', filename=None):
+    upload(context, type, filename)
+
+    with context.cd(env.project_name):
+        execute(context, 'python -m pipenv install --three')
 
 
 @task(pre=[config], hosts=env.hosts, help={'filename': 'The filename to backup locally from the server'})
