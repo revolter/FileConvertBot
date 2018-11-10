@@ -42,9 +42,9 @@ class User(BaseModel):
     telegram_username = TextField(null=True)
 
     def get_markdown_description(self):
-        username = '@{}'.format(self.telegram_username) if self.telegram_username else 'n/a'
+        username = '`@{}`'.format(self.telegram_username) if self.telegram_username else '-'
 
-        return '{0.rowid}. | [{0.telegram_id}](tg://user?id={0.telegram_id}) | `{1}`'.format(self, username)
+        return '{0.rowid}. | [{0.telegram_id}](tg://user?id={0.telegram_id}) | {1}'.format(self, username)
 
     def get_created_at(self):
         return self.created_at.strftime(GENERIC_DATE_TIME_FORMAT)
