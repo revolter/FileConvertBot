@@ -91,7 +91,7 @@ class User(BaseModel):
         users_table = ''
 
         try:
-            for index, user in enumerate(cls.select()):
+            for user in reversed(cls.select().order_by(User.created_at.desc()).limit(10)):
                 users_table = '{}\n{} | {} | {}'.format(
                     users_table,
 
