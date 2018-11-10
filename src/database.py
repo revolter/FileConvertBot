@@ -26,10 +26,14 @@ migrator = Migrator(database)
 router = Router(database, migrate_table='migration', logger=logger)
 
 
+def get_current_datetime():
+    return datetime.now().strftime(GENERIC_DATE_TIME_FORMAT)
+
+
 class BaseModel(Model):
     rowid = RowIDField()
 
-    created_at = DateTimeField(default=datetime.now)
+    created_at = DateTimeField(default=get_current_datetime)
     updated_at = DateTimeField()
 
     class Meta:
@@ -63,7 +67,7 @@ class User(BaseModel):
 
     @classmethod
     def create_user(cls, id, username):
-        current_date_time = datetime.now()
+        current_date_time = get_current_datetime()
 
         try:
             defaults = {
