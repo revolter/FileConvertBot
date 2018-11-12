@@ -20,7 +20,7 @@ error_logging_handler.setLevel(logging.ERROR)
 
 logging.getLogger().addHandler(error_logging_handler)
 
-from telegram import ChatAction, ParseMode
+from telegram import Chat, ChatAction, ParseMode
 from telegram.ext import (
     CommandHandler, MessageHandler,
     Filters, Updater
@@ -103,6 +103,7 @@ def users_command_handler(bot, update, args):
 
 def message_handler(bot, update):
     message = update.message
+    chat_type = update.effective_chat.type
 
     message_id = message.message_id
     chat_id = message.chat.id
@@ -116,7 +117,8 @@ def message_handler(bot, update):
 
     analytics.track(AnalyticsType.MESSAGE, user)
 
-    bot.send_chat_action(chat_id, ChatAction.TYPING)
+    if chat_type == Chat.PRIVATE:
+        bot.send_chat_action(chat_id, ChatAction.TYPING)
 
     input_file = bot.get_file(input_file_id)
     input_file_path = input_file.file_path
@@ -138,7 +140,8 @@ def message_handler(bot, update):
 
                 break
             else:
-                bot.send_message(chat_id, 'File type "{}" is not yet supported.'.format(codec_name))
+                if chat_type == Chat.PRIVATE:
+                    bot.send_message(chat_id, 'File type "{}" is not yet supported.'.format(codec_name))
 
                 return
 
