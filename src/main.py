@@ -141,7 +141,11 @@ def message_handler(bot, update):
                 break
             else:
                 if chat_type == Chat.PRIVATE:
-                    bot.send_message(chat_id, 'File type "{}" is not yet supported.'.format(codec_name))
+                    bot.send_message(
+                        chat_id,
+                        'File type "{}" is not yet supported.'.format(codec_name),
+                        reply_to_message_id=message_id
+                    )
 
                 return
 
