@@ -42,6 +42,12 @@ updater = None
 analytics = None
 
 
+class OutputType:
+    NONE = 'none'
+    AUDIO = 'audio'
+    VIDEO = 'video'
+
+
 def stop_and_restart():
     updater.stop()
     os.execl(sys.executable, sys.executable, *sys.argv)
@@ -126,19 +132,35 @@ def message_handler(bot, update):
     probe = ffmpeg.probe(input_file_path)
 
     with io.BytesIO() as input_bytes:
+        output_type = OutputType.NONE
+
         for stream in probe['streams']:
             codec_name = stream['codec_name']
 
             if codec_name == 'mp3':
+                output_type = OutputType.AUDIO
+
                 opus_bytes = ffmpeg.input(input_file_path).output('pipe:', format='opus', strict='-2').run(capture_stdout=True)[0]
 
                 input_bytes.write(opus_bytes)
 
                 break
             elif codec_name == 'opus':
+                output_type = OutputType.AUDIO
+
                 input_file.download(out=input_bytes)
 
                 break
+
+            elif codec_name == 'vp6':
+                output_type = OutputType.VIDEO
+
+                mp4_bytes = ffmpeg.input(input_file_path).output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2').run(capture_stdout=True)[0]
+
+                input_bytes.write(mp4_bytes)
+
+                break
+
             else:
                 if chat_type == Chat.PRIVATE:
                     bot.send_message(
@@ -149,16 +171,26 @@ def message_handler(bot, update):
 
                 return
 
-        bot.send_chat_action(chat_id, ChatAction.UPLOAD_AUDIO)
-
         input_bytes.seek(0)
 
-        bot.send_voice(
-            chat_id,
-            input_bytes,
-            caption=input_file_name,
-            reply_to_message_id=message_id
-        )
+        if output_type == OutputType.AUDIO:
+            bot.send_chat_action(chat_id, ChatAction.UPLOAD_AUDIO)
+
+            bot.send_voice(
+                chat_id,
+                input_bytes,
+                caption=input_file_name,
+                reply_to_message_id=message_id
+            )
+        elif output_type == OutputType.VIDEO:
+            bot.send_chat_action(chat_id, ChatAction.UPLOAD_VIDEO)
+
+            bot.send_video(
+                chat_id,
+                input_bytes,
+                caption=input_file_name,
+                reply_to_message_id=message_id
+            )
 
 
 def error_handler(bot, update, error):
