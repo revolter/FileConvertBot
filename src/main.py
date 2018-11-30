@@ -20,6 +20,12 @@ error_logging_handler.setLevel(logging.ERROR)
 
 logging.getLogger().addHandler(error_logging_handler)
 
+warning_logging_handler = logging.FileHandler('warnings.log')
+warning_logging_handler.setFormatter(logging.Formatter(LOGS_FORMAT))
+warning_logging_handler.setLevel(logging.WARNING)
+
+logging.getLogger().addHandler(warning_logging_handler)
+
 from telegram import Chat, ChatAction, ParseMode
 from telegram.ext import (
     CommandHandler, MessageHandler,
