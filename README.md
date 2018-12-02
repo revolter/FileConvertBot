@@ -1,4 +1,4 @@
-# File Convert Bot
+# <img src="/images/logo.png" width="28"/> File Convert Bot
 
 ## Introduction
 
