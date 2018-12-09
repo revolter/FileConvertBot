@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "208a231a1ba254649463752f03f31347b8d9af29fe280b7191688c0ae43dcc2c"
+            "sha256": "90bc706eda07ae2c8142e26c2f5a81f6881d185daba1777bc8379dcb365af9c8"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -198,6 +198,14 @@
                 "sha256:de9529817c93f27c8ccbfead6985011db27bd0ddfcdb2d86f3f663385c6a9c22"
             ],
             "version": "==1.24.1"
+        },
+        "youtube-dl": {
+            "hashes": [
+                "sha256:753befcc6ab05eed1857c3d42ad45e72e9777a78b137051c21834648f71626a3",
+                "sha256:eaf1cd7ea0b599268a9c1f506afa8945ec85e6b4f7243108f9b40a150097bfbe"
+            ],
+            "index": "pypi",
+            "version": "==2018.12.9"
         }
     },
     "develop": {

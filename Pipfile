@@ -9,6 +9,7 @@ peewee = "*"
 peewee-migrate = "*"
 python-telegram-bot = "*"
 requests = "*"
+youtube-dl = "*"
 
 [dev-packages]
 fabric = "*"
