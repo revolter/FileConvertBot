@@ -13,3 +13,11 @@ GENERIC_DATE_FORMAT = '%Y-%m-%d'
 GENERIC_DATE_TIME_FORMAT = '{} %H:%M:%S'.format(GENERIC_DATE_FORMAT)
 
 EPOCH_DATE = datetime(1970, 1, 1)
+
+
+class LoggerFilter(object):
+    def __init__(self, level):
+        self.__level = level
+
+    def filter(self, log_record):
+        return log_record.levelno <= self.__level
