@@ -28,13 +28,14 @@ warning_logging_handler.addFilter(LoggerFilter(logging.WARNING))
 
 logging.getLogger().addHandler(warning_logging_handler)
 
-from telegram import Chat, ChatAction, ParseMode
+from telegram import Chat, ChatAction, MessageEntity, ParseMode
 from telegram.ext import (
     CommandHandler, MessageHandler,
     Filters, Updater
 )
 
 import ffmpeg
+import youtube_dl
 
 from analytics import Analytics, AnalyticsType
 from database import User
@@ -115,7 +116,7 @@ def users_command_handler(bot, update, args):
     bot.send_message(chat_id, User.get_users_table('updated' in args), parse_mode=ParseMode.MARKDOWN)
 
 
-def message_handler(bot, update):
+def message_file_handler(bot, update):
     message = update.message
     chat_type = update.effective_chat.type
 
@@ -201,6 +202,99 @@ def message_handler(bot, update):
             )
 
 
+def message_text_handler(bot, update):
+    message = update.message
+    chat_type = update.effective_chat.type
+
+    message_id = message.message_id
+    chat_id = message.chat.id
+    user = message.from_user
+    entities = message.parse_entities()
+
+    create_or_update_user(bot, user)
+
+    analytics.track(AnalyticsType.MESSAGE, user)
+
+    entity, text = next(((entity, text) for entity, text in entities.items() if entity.type in [MessageEntity.URL, MessageEntity.TEXT_LINK]), None)
+
+    if entity is None:
+        return
+
+    input_link = entity.url
+
+    if input_link is None:
+        input_link = text
+
+    with io.BytesIO() as input_bytes:
+        caption = None
+        video_link = None
+
+        try:
+            yt_dl_options = {
+                'logger': logger,
+                'no_color': True
+            }
+
+            with youtube_dl.YoutubeDL(yt_dl_options) as yt_dl:
+                video_info = yt_dl.extract_info(input_link, download=False)
+
+            if 'entries' in video_info:
+                video = video_info['entries'][0]
+            else:
+                video = video_info
+
+            if 'title' in video:
+                caption = video['title']
+            else:
+                caption = input_link
+
+            requested_formats = video['requested_formats']
+
+            video_data = list(filter(lambda format: format['vcodec'] != 'none', requested_formats))[0]
+            audio_data = list(filter(lambda format: format['acodec'] != 'none', requested_formats))[0]
+
+            if chat_type == Chat.PRIVATE and video_data['filesize'] > 50000000:
+                bot.send_message(
+                    chat_id,
+                    'Video file size exceeds the 50 MB limit.',
+                    reply_to_message_id=message_id
+                )
+
+                return
+
+            video_link = video_data['url']
+            audio_link = audio_data['url']
+        except Exception as error:
+            logger.error('youtube-dl error: {}'.format(error))
+
+        if chat_type == Chat.PRIVATE and (caption is None or video_link is None):
+            bot.send_message(
+                chat_id,
+                'No video found on "{}".'.format(input_link),
+                disable_web_page_preview=True,
+                reply_to_message_id=message_id
+            )
+
+            return
+
+        video = ffmpeg.input(video_link)
+        audio = ffmpeg.input(audio_link)
+
+        mp4_bytes = ffmpeg.output(video, audio, 'pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2').run(capture_stdout=True)[0]
+
+        input_bytes.write(mp4_bytes)
+        input_bytes.seek(0)
+
+        bot.send_chat_action(chat_id, ChatAction.UPLOAD_VIDEO)
+
+        bot.send_video(
+            chat_id,
+            input_bytes,
+            caption=caption,
+            reply_to_message_id=message_id
+        )
+
+
 def error_handler(bot, update, error):
     logger.error('Update "{}" caused error "{}"'.format(update, error))
 
@@ -214,7 +308,8 @@ def main():
     dispatcher.add_handler(CommandHandler('logs', logs_command_handler))
     dispatcher.add_handler(CommandHandler('users', users_command_handler, pass_args=True))
 
-    dispatcher.add_handler(MessageHandler(Filters.audio | Filters.document, message_handler))
+    dispatcher.add_handler(MessageHandler(Filters.audio | Filters.document, message_file_handler))
+    dispatcher.add_handler(MessageHandler(Filters.private & (Filters.text & (Filters.entity(MessageEntity.URL) | Filters.entity(MessageEntity.TEXT_LINK))), message_text_handler))
 
     dispatcher.add_error_handler(error_handler)
 
