@@ -160,7 +160,7 @@ def message_handler(bot, update):
 
                 break
 
-            elif codec_name == 'vp6':
+            elif codec_name in ['vp6', 'vp8']:
                 output_type = OutputType.VIDEO
 
                 mp4_bytes = ffmpeg.input(input_file_path).output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2').run(capture_stdout=True)[0]
