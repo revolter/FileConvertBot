@@ -118,6 +118,10 @@ def users_command_handler(bot, update, args):
 
 def message_file_handler(bot, update):
     message = update.message
+
+    if cli_args.debug and not check_admin(bot, message, analytics, ADMIN_USER_ID):
+        return
+
     chat_type = update.effective_chat.type
 
     message_id = message.message_id
@@ -206,6 +210,9 @@ def message_file_handler(bot, update):
 def message_text_handler(bot, update):
     message = update.message
     chat_type = update.effective_chat.type
+
+    if cli_args.debug and not check_admin(bot, message, analytics, ADMIN_USER_ID):
+        return
 
     message_id = message.message_id
     chat_id = message.chat.id
