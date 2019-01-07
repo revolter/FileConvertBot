@@ -198,6 +198,7 @@ def message_file_handler(bot, update):
                 chat_id,
                 input_bytes,
                 caption=input_file_name,
+                supports_streaming=True,
                 reply_to_message_id=message_id
             )
 
@@ -291,6 +292,7 @@ def message_text_handler(bot, update):
             chat_id,
             input_bytes,
             caption=caption,
+            supports_streaming=True,
             reply_to_message_id=message_id
         )
 
