@@ -144,36 +144,34 @@ def message_file_handler(bot, update):
 
     probe = ffmpeg.probe(input_file_path)
 
-    with io.BytesIO() as input_bytes:
+    with io.BytesIO() as output_bytes:
         output_type = OutputType.NONE
 
         for stream in probe['streams']:
             codec_name = stream['codec_name']
 
             if codec_name == 'mp3':
-                output_type = OutputType.AUDIO
-
                 opus_bytes = ffmpeg.input(input_file_path).output('pipe:', format='opus', strict='-2').run(capture_stdout=True)[0]
 
-                input_bytes.write(opus_bytes)
+                output_bytes.write(opus_bytes)
+
+                output_type = OutputType.AUDIO
 
                 break
             elif codec_name == 'opus':
+                input_file.download(out=output_bytes)
+
                 output_type = OutputType.AUDIO
 
-                input_file.download(out=input_bytes)
-
                 break
-
             elif codec_name in ['vp6', 'vp8']:
-                output_type = OutputType.VIDEO
-
                 mp4_bytes = ffmpeg.input(input_file_path).output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2').run(capture_stdout=True)[0]
 
-                input_bytes.write(mp4_bytes)
+                output_bytes.write(mp4_bytes)
+
+                output_type = OutputType.VIDEO
 
                 break
-
             else:
                 if chat_type == Chat.PRIVATE:
                     bot.send_message(
@@ -184,14 +182,14 @@ def message_file_handler(bot, update):
 
                 return
 
-        input_bytes.seek(0)
+        output_bytes.seek(0)
 
         if output_type == OutputType.AUDIO:
             bot.send_chat_action(chat_id, ChatAction.UPLOAD_AUDIO)
 
             bot.send_voice(
                 chat_id,
-                input_bytes,
+                output_bytes,
                 caption=input_file_name,
                 reply_to_message_id=message_id
             )
@@ -200,7 +198,7 @@ def message_file_handler(bot, update):
 
             bot.send_video(
                 chat_id,
-                input_bytes,
+                output_bytes,
                 caption=input_file_name,
                 supports_streaming=True,
                 reply_to_message_id=message_id
@@ -233,7 +231,7 @@ def message_text_handler(bot, update):
     if input_link is None:
         input_link = text
 
-    with io.BytesIO() as input_bytes:
+    with io.BytesIO() as output_bytes:
         caption = None
         video_link = None
 
@@ -290,14 +288,14 @@ def message_text_handler(bot, update):
 
         mp4_bytes = ffmpeg.output(video, audio, 'pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2').run(capture_stdout=True)[0]
 
-        input_bytes.write(mp4_bytes)
-        input_bytes.seek(0)
+        output_bytes.write(mp4_bytes)
+        output_bytes.seek(0)
 
         bot.send_chat_action(chat_id, ChatAction.UPLOAD_VIDEO)
 
         bot.send_video(
             chat_id,
-            input_bytes,
+            output_bytes,
             caption=caption,
             supports_streaming=True,
             reply_to_message_id=message_id
