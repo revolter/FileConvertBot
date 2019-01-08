@@ -59,3 +59,10 @@ fab deploy
 ```
 
 You can also deploy a single file using `fab deploy --filename=main.py` or `fab deploy --source=meta --filename=Pipfile`.
+
+## Dependencies
+
+Currently, you have to manually install `poppler` in order for `PDF` to `PNG` conversion to work:
+
+- macOS: `brew install poppler`
+- Ubuntu: `sudo apt-get install poppler-utils`
