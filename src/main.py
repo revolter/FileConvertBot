@@ -28,6 +28,7 @@ warning_logging_handler.addFilter(LoggerFilter(logging.WARNING))
 
 logging.getLogger().addHandler(warning_logging_handler)
 
+from pdf2image import convert_from_bytes
 from telegram import Chat, ChatAction, MessageEntity, ParseMode
 from telegram.ext import (
     CommandHandler, MessageHandler,
@@ -55,6 +56,7 @@ class OutputType:
     NONE = 'none'
     AUDIO = 'audio'
     VIDEO = 'video'
+    PHOTO = 'photo'
 
 
 def stop_and_restart():
@@ -142,45 +144,67 @@ def message_file_handler(bot, update):
     input_file = bot.get_file(input_file_id)
     input_file_path = input_file.file_path
 
-    probe = ffmpeg.probe(input_file_path)
+    probe = None
+
+    try:
+        probe = ffmpeg.probe(input_file_path)
+    except:
+        pass
 
     with io.BytesIO() as output_bytes:
         output_type = OutputType.NONE
 
-        for stream in probe['streams']:
-            codec_name = stream['codec_name']
+        if probe is None:
+            with io.BytesIO() as input_bytes:
+                try:
+                    input_file.download(out=input_bytes)
 
-            if codec_name == 'mp3':
-                opus_bytes = ffmpeg.input(input_file_path).output('pipe:', format='opus', strict='-2').run(capture_stdout=True)[0]
+                    images = convert_from_bytes(input_bytes.getbuffer())
+                    image = images[0]
 
-                output_bytes.write(opus_bytes)
+                    with io.BytesIO() as image_bytes:
+                        image.save(image_bytes, format='PNG')
 
-                output_type = OutputType.AUDIO
+                        output_bytes.write(image_bytes.getbuffer())
 
-                break
-            elif codec_name == 'opus':
-                input_file.download(out=output_bytes)
+                        output_type = OutputType.PHOTO
+                except Exception as error:
+                    logger.error('pdf2image error: {}'.format(error))
+        else:
+            for stream in probe['streams']:
+                codec_name = stream['codec_name']
 
-                output_type = OutputType.AUDIO
+                if codec_name == 'mp3':
+                    opus_bytes = ffmpeg.input(input_file_path).output('pipe:', format='opus', strict='-2').run(capture_stdout=True)[0]
 
-                break
-            elif codec_name in ['vp6', 'vp8']:
-                mp4_bytes = ffmpeg.input(input_file_path).output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2').run(capture_stdout=True)[0]
+                    output_bytes.write(opus_bytes)
 
-                output_bytes.write(mp4_bytes)
+                    output_type = OutputType.AUDIO
 
-                output_type = OutputType.VIDEO
+                    break
+                elif codec_name == 'opus':
+                    input_file.download(out=output_bytes)
 
-                break
-            else:
-                if chat_type == Chat.PRIVATE:
-                    bot.send_message(
-                        chat_id,
-                        'File type "{}" is not yet supported.'.format(codec_name),
-                        reply_to_message_id=message_id
-                    )
+                    output_type = OutputType.AUDIO
 
-                return
+                    break
+                elif codec_name in ['vp6', 'vp8']:
+                    mp4_bytes = ffmpeg.input(input_file_path).output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2').run(capture_stdout=True)[0]
+
+                    output_bytes.write(mp4_bytes)
+
+                    output_type = OutputType.VIDEO
+
+                    break
+                else:
+                    if chat_type == Chat.PRIVATE:
+                        bot.send_message(
+                            chat_id,
+                            'File type "{}" is not yet supported.'.format(codec_name),
+                            reply_to_message_id=message_id
+                        )
+
+                    return
 
         output_bytes.seek(0)
 
@@ -193,6 +217,8 @@ def message_file_handler(bot, update):
                 caption=input_file_name,
                 reply_to_message_id=message_id
             )
+
+            return
         elif output_type == OutputType.VIDEO:
             bot.send_chat_action(chat_id, ChatAction.UPLOAD_VIDEO)
 
@@ -203,6 +229,24 @@ def message_file_handler(bot, update):
                 supports_streaming=True,
                 reply_to_message_id=message_id
             )
+
+            return
+        elif output_type == OutputType.PHOTO:
+            bot.send_photo(
+                chat_id,
+                output_bytes,
+                caption=input_file_name,
+                reply_to_message_id=message_id
+            )
+
+            return
+
+    if chat_type == Chat.PRIVATE:
+        bot.send_message(
+            chat_id,
+            'File type is not yet supported.',
+            reply_to_message_id=message_id
+        )
 
 
 def message_text_handler(bot, update):
