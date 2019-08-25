@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Telegram Bot that converts _(for now)_ sent OPUS or MP3 files to voice messages. The bot currently runs as [@FileConvertBot](https://t.me/FileConvertBot).
+Telegram Bot that converts _(for now)_ OPUS, MP3 and WebM files to voice messages, MP4 (VP6 and VP8) to video message and PDF files to PNG _(currently only the first page)_. It also tries to download videos from some websited and send them as video messages. The bot currently runs as [@FileConvertBot](https://t.me/FileConvertBot).
 
 ## Getting Started
 
