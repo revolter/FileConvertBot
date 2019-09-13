@@ -83,7 +83,7 @@ def start_command_handler(bot, update):
 
     analytics.track(AnalyticsType.COMMAND, user, '/start')
 
-    bot.send_message(chat_id, 'Send me an audio file to convert it to a voice message.')
+    bot.send_message(chat_id, 'Send me a file to try to convert it to a nice message or a sticker.')
 
 
 def restart_command_handler(bot, update):
