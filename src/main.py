@@ -28,6 +28,7 @@ warning_logging_handler.addFilter(LoggerFilter(logging.WARNING))
 
 logging.getLogger().addHandler(warning_logging_handler)
 
+from PIL import Image
 from pdf2image import convert_from_bytes
 from telegram import Chat, ChatAction, MessageEntity, ParseMode
 from telegram.ext import (
@@ -57,6 +58,7 @@ class OutputType:
     AUDIO = 'audio'
     VIDEO = 'video'
     PHOTO = 'photo'
+    STICKER = 'sticker'
 
 
 def stop_and_restart():
@@ -154,49 +156,59 @@ def message_file_handler(bot, update):
     with io.BytesIO() as output_bytes:
         output_type = OutputType.NONE
 
-        if probe is None:
-            with io.BytesIO() as input_bytes:
-                try:
+        for stream in probe['streams']:
+            codec_name = stream['codec_name']
+
+            if codec_name == 'mp3':
+                opus_bytes = ffmpeg.input(input_file_path).output('pipe:', format='opus', strict='-2').run(capture_stdout=True)[0]
+
+                output_bytes.write(opus_bytes)
+
+                output_type = OutputType.AUDIO
+
+                break
+            elif codec_name == 'opus':
+                input_file.download(out=output_bytes)
+
+                output_type = OutputType.AUDIO
+
+                break
+            elif codec_name in ['vp6', 'vp8']:
+                mp4_bytes = ffmpeg.input(input_file_path).output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2').run(capture_stdout=True)[0]
+
+                output_bytes.write(mp4_bytes)
+
+                output_type = OutputType.VIDEO
+
+                break
+            else:
+                with io.BytesIO() as input_bytes:
                     input_file.download(out=input_bytes)
 
-                    images = convert_from_bytes(input_bytes.getbuffer())
-                    image = images[0]
+                    try:
+                        images = convert_from_bytes(input_bytes.getbuffer())
+                        image = images[0]
 
-                    with io.BytesIO() as image_bytes:
-                        image.save(image_bytes, format='PNG')
+                        with io.BytesIO() as image_bytes:
+                            image.save(image_bytes, format='PNG')
 
-                        output_bytes.write(image_bytes.getbuffer())
+                            output_bytes.write(image_bytes.getbuffer())
 
-                        output_type = OutputType.PHOTO
-                except Exception as error:
-                    logger.error('pdf2image error: {}'.format(error))
-        else:
-            for stream in probe['streams']:
-                codec_name = stream['codec_name']
+                            output_type = OutputType.PHOTO
+                    except Exception as error:
+                        logger.error('pdf2image error: {}'.format(error))
 
-                if codec_name == 'mp3':
-                    opus_bytes = ffmpeg.input(input_file_path).output('pipe:', format='opus', strict='-2').run(capture_stdout=True)[0]
+                    if output_type == OutputType.NONE:
+                        image = Image.open(input_bytes)
 
-                    output_bytes.write(opus_bytes)
+                        with io.BytesIO() as image_bytes:
+                            image.save(image_bytes, format='WEBP')
 
-                    output_type = OutputType.AUDIO
+                            output_bytes.write(image_bytes.getbuffer())
 
-                    break
-                elif codec_name == 'opus':
-                    input_file.download(out=output_bytes)
+                            output_type = OutputType.STICKER
 
-                    output_type = OutputType.AUDIO
-
-                    break
-                elif codec_name in ['vp6', 'vp8']:
-                    mp4_bytes = ffmpeg.input(input_file_path).output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2').run(capture_stdout=True)[0]
-
-                    output_bytes.write(mp4_bytes)
-
-                    output_type = OutputType.VIDEO
-
-                    break
-                else:
+                if output_type == OutputType.NONE:
                     if chat_type == Chat.PRIVATE:
                         bot.send_message(
                             chat_id,
@@ -205,6 +217,8 @@ def message_file_handler(bot, update):
                         )
 
                     return
+                else:
+                    break
 
         output_bytes.seek(0)
 
@@ -236,6 +250,14 @@ def message_file_handler(bot, update):
                 chat_id,
                 output_bytes,
                 caption=input_file_name,
+                reply_to_message_id=message_id
+            )
+
+            return
+        elif output_type == OutputType.STICKER:
+            bot.send_sticker(
+                chat_id,
+                output_bytes,
                 reply_to_message_id=message_id
             )
 
