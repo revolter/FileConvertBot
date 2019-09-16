@@ -156,69 +156,71 @@ def message_file_handler(bot, update):
     with io.BytesIO() as output_bytes:
         output_type = OutputType.NONE
 
-        for stream in probe['streams']:
-            codec_name = stream['codec_name']
+        if probe:
+            for stream in probe['streams']:
+                codec_name = stream['codec_name']
+    
+                if codec_name == 'mp3':
+                    opus_bytes = ffmpeg.input(input_file_path).output('pipe:', format='opus', strict='-2').run(capture_stdout=True)[0]
+    
+                    output_bytes.write(opus_bytes)
+    
+                    output_type = OutputType.AUDIO
+    
+                    break
+                elif codec_name == 'opus':
+                    input_file.download(out=output_bytes)
+    
+                    output_type = OutputType.AUDIO
+    
+                    break
+                elif codec_name in ['vp6', 'vp8']:
+                    mp4_bytes = ffmpeg.input(input_file_path).output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2').run(capture_stdout=True)[0]
+    
+                    output_bytes.write(mp4_bytes)
+    
+                    output_type = OutputType.VIDEO
+    
+                    break
+                else:
+                    continue
 
-            if codec_name == 'mp3':
-                opus_bytes = ffmpeg.input(input_file_path).output('pipe:', format='opus', strict='-2').run(capture_stdout=True)[0]
+        if output_type == OutputType.NONE:
+            with io.BytesIO() as input_bytes:
+                input_file.download(out=input_bytes)
 
-                output_bytes.write(opus_bytes)
+                try:
+                    images = convert_from_bytes(input_bytes.getbuffer())
+                    image = images[0]
 
-                output_type = OutputType.AUDIO
+                    with io.BytesIO() as image_bytes:
+                        image.save(image_bytes, format='PNG')
 
-                break
-            elif codec_name == 'opus':
-                input_file.download(out=output_bytes)
+                        output_bytes.write(image_bytes.getbuffer())
 
-                output_type = OutputType.AUDIO
-
-                break
-            elif codec_name in ['vp6', 'vp8']:
-                mp4_bytes = ffmpeg.input(input_file_path).output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2').run(capture_stdout=True)[0]
-
-                output_bytes.write(mp4_bytes)
-
-                output_type = OutputType.VIDEO
-
-                break
-            else:
-                with io.BytesIO() as input_bytes:
-                    input_file.download(out=input_bytes)
-
-                    try:
-                        images = convert_from_bytes(input_bytes.getbuffer())
-                        image = images[0]
-
-                        with io.BytesIO() as image_bytes:
-                            image.save(image_bytes, format='PNG')
-
-                            output_bytes.write(image_bytes.getbuffer())
-
-                            output_type = OutputType.PHOTO
-                    except Exception as error:
-                        logger.error('pdf2image error: {}'.format(error))
-
-                    if output_type == OutputType.NONE:
-                        image = Image.open(input_bytes)
-
-                        with io.BytesIO() as image_bytes:
-                            image.save(image_bytes, format='WEBP')
-
-                            output_bytes.write(image_bytes.getbuffer())
-
-                            output_type = OutputType.STICKER
+                        output_type = OutputType.PHOTO
+                except Exception as error:
+                    logger.error('pdf2image error: {}'.format(error))
 
                 if output_type == OutputType.NONE:
-                    if chat_type == Chat.PRIVATE:
-                        bot.send_message(
-                            chat_id,
-                            'File type "{}" is not yet supported.'.format(codec_name),
-                            reply_to_message_id=message_id
-                        )
+                    image = Image.open(input_bytes)
 
-                    return
-                else:
-                    break
+                    with io.BytesIO() as image_bytes:
+                        image.save(image_bytes, format='WEBP')
+
+                        output_bytes.write(image_bytes.getbuffer())
+
+                        output_type = OutputType.STICKER
+
+        if output_type == OutputType.NONE:
+            if chat_type == Chat.PRIVATE:
+                bot.send_message(
+                    chat_id,
+                    'File type "{}" is not yet supported.'.format(codec_name),
+                    reply_to_message_id=message_id
+                )
+
+            return
 
         output_bytes.seek(0)
 
