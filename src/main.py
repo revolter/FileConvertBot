@@ -156,9 +156,13 @@ def message_file_handler(bot, update):
     with io.BytesIO() as output_bytes:
         output_type = OutputType.NONE
 
+        invalid_format = None
+
         if probe:
             for stream in probe['streams']:
                 codec_name = stream['codec_name']
+
+                invalid_format = codec_name
 
                 if codec_name == 'mp3':
                     opus_bytes = ffmpeg.input(input_file_path).output('pipe:', format='opus', strict='-2').run(capture_stdout=True)[0]
@@ -217,9 +221,12 @@ def message_file_handler(bot, update):
 
         if output_type == OutputType.NONE:
             if chat_type == Chat.PRIVATE:
+                if invalid_format is None:
+                    invalid_format = os.path.splitext(input_file_path)[1][1:]
+
                 bot.send_message(
                     chat_id,
-                    'File type "{}" is not yet supported.'.format(codec_name),
+                    'File type "{}" is not yet supported.'.format(invalid_format),
                     reply_to_message_id=message_id
                 )
 
