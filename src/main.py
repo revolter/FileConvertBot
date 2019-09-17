@@ -203,14 +203,17 @@ def message_file_handler(bot, update):
                     logger.error('pdf2image error: {}'.format(error))
 
                 if output_type == OutputType.NONE:
-                    image = Image.open(input_bytes)
+                    try:
+                        image = Image.open(input_bytes)
 
-                    with io.BytesIO() as image_bytes:
-                        image.save(image_bytes, format='WEBP')
+                        with io.BytesIO() as image_bytes:
+                            image.save(image_bytes, format='WEBP')
 
-                        output_bytes.write(image_bytes.getbuffer())
+                            output_bytes.write(image_bytes.getbuffer())
 
-                        output_type = OutputType.STICKER
+                            output_type = OutputType.STICKER
+                    except Exception as error:
+                        logger.error('PIL error: {}'.format(error))
 
         if output_type == OutputType.NONE:
             if chat_type == Chat.PRIVATE:
