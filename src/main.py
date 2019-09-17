@@ -159,28 +159,28 @@ def message_file_handler(bot, update):
         if probe:
             for stream in probe['streams']:
                 codec_name = stream['codec_name']
-    
+
                 if codec_name == 'mp3':
                     opus_bytes = ffmpeg.input(input_file_path).output('pipe:', format='opus', strict='-2').run(capture_stdout=True)[0]
-    
+
                     output_bytes.write(opus_bytes)
-    
+
                     output_type = OutputType.AUDIO
-    
+
                     break
                 elif codec_name == 'opus':
                     input_file.download(out=output_bytes)
-    
+
                     output_type = OutputType.AUDIO
-    
+
                     break
                 elif codec_name in ['vp6', 'vp8']:
                     mp4_bytes = ffmpeg.input(input_file_path).output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2').run(capture_stdout=True)[0]
-    
+
                     output_bytes.write(mp4_bytes)
-    
+
                     output_type = OutputType.VIDEO
-    
+
                     break
                 else:
                     continue
