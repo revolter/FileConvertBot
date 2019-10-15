@@ -30,10 +30,11 @@ logging.getLogger().addHandler(warning_logging_handler)
 
 from PIL import Image
 from pdf2image import convert_from_bytes
-from telegram import Chat, ChatAction, MessageEntity, ParseMode
+from telegram import Chat, ChatAction, MessageEntity, ParseMode, Update
 from telegram.ext import (
     CommandHandler, MessageHandler,
-    Filters, Updater
+    Filters, Updater,
+    CallbackContext
 )
 
 import ffmpeg
@@ -73,8 +74,9 @@ def create_or_update_user(bot, user):
             bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_markdown_description()), parse_mode=ParseMode.MARKDOWN)
 
 
-def start_command_handler(bot, update):
+def start_command_handler(update: Update, context: CallbackContext):
     message = update.message
+    bot = context.bot
 
     chat_id = message.chat_id
     user = message.from_user
@@ -86,8 +88,9 @@ def start_command_handler(bot, update):
     bot.send_message(chat_id, 'Send me a file to try to convert it to a nice message or a sticker.')
 
 
-def restart_command_handler(bot, update):
+def restart_command_handler(update: Update, context: CallbackContext):
     message = update.message
+    bot = context.bot
 
     if not check_admin(bot, message, analytics, ADMIN_USER_ID):
         return
@@ -97,8 +100,10 @@ def restart_command_handler(bot, update):
     Thread(target=stop_and_restart).start()
 
 
-def logs_command_handler(bot, update):
+def logs_command_handler(update: Update, context: CallbackContext):
     message = update.message
+    bot = context.bot
+
     chat_id = message.chat_id
 
     if not check_admin(bot, message, analytics, ADMIN_USER_ID):
@@ -110,18 +115,21 @@ def logs_command_handler(bot, update):
         bot.send_message(chat_id, 'Log is empty')
 
 
-def users_command_handler(bot, update, args):
+def users_command_handler(update: Update, context: CallbackContext):
     message = update.message
+    bot = context.bot
+
     chat_id = message.chat_id
 
     if not check_admin(bot, message, analytics, ADMIN_USER_ID):
         return
 
-    bot.send_message(chat_id, User.get_users_table('updated' in args), parse_mode=ParseMode.MARKDOWN)
+    bot.send_message(chat_id, User.get_users_table('updated' in context.args), parse_mode=ParseMode.MARKDOWN)
 
 
-def message_file_handler(bot, update):
+def message_file_handler(update: Update, context: CallbackContext):
     message = update.message
+    bot = context.bot
 
     if cli_args.debug and not check_admin(bot, message, analytics, ADMIN_USER_ID):
         return
@@ -283,9 +291,10 @@ def message_file_handler(bot, update):
         )
 
 
-def message_text_handler(bot, update):
+def message_text_handler(update: Update, context: CallbackContext):
     message = update.message
     chat_type = update.effective_chat.type
+    bot = context.bot
 
     if cli_args.debug and not check_admin(bot, message, analytics, ADMIN_USER_ID):
         return
@@ -380,8 +389,8 @@ def message_text_handler(bot, update):
         )
 
 
-def error_handler(bot, update, error):
-    logger.error('Update "{}" caused error "{}"'.format(update, error))
+def error_handler(update: Update, context: CallbackContext):
+    logger.error('Update "{}" caused error "{}"'.format(update, context.error))
 
 
 def main():
@@ -476,7 +485,7 @@ if __name__ == '__main__':
 
         sys.exit(2)
 
-    updater = Updater(BOT_TOKEN)
+    updater = Updater(BOT_TOKEN, use_context=True)
     analytics = Analytics()
 
     try:
