@@ -482,7 +482,8 @@ if __name__ == '__main__':
     try:
         ADMIN_USER_ID = config.getint('Telegram', 'Admin')
 
-        analytics.googleToken = config.get('Google', 'Key')
+        if not cli_args.debug:
+            analytics.googleToken = config.get('Google', 'Key')
     except configparser.Error as error:
         logger.warning('Config error: {}'.format(error))
 
