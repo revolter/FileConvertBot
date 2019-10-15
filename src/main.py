@@ -43,6 +43,7 @@ import ffmpeg
 import youtube_dl
 
 from analytics import Analytics, AnalyticsType
+from constants import MAX_PHOTO_FILESIZE_UPLOAD
 from database import User
 from utils import check_admin, ensure_size_under_limit
 
@@ -248,12 +249,16 @@ def message_file_handler(update: Update, context: CallbackContext):
 
         output_bytes.seek(0)
 
+        output_file_size = output_bytes.getbuffer().nbytes
         caption = None
 
         if input_file_name is not None:
             caption = input_file_name[:MAX_CAPTION_LENGTH]
 
         if output_type == OutputType.AUDIO:
+            if not ensure_size_under_limit(output_file_size, MAX_FILESIZE_UPLOAD, update, context, file_reference_text='Converted file'):
+                return
+
             bot.send_chat_action(chat_id, ChatAction.UPLOAD_AUDIO)
 
             bot.send_voice(
@@ -265,6 +270,9 @@ def message_file_handler(update: Update, context: CallbackContext):
 
             return
         elif output_type == OutputType.VIDEO:
+            if not ensure_size_under_limit(output_file_size, MAX_FILESIZE_UPLOAD, update, context, file_reference_text='Converted file'):
+                return
+
             bot.send_chat_action(chat_id, ChatAction.UPLOAD_VIDEO)
 
             bot.send_video(
@@ -277,6 +285,9 @@ def message_file_handler(update: Update, context: CallbackContext):
 
             return
         elif output_type == OutputType.PHOTO:
+            if not ensure_size_under_limit(output_file_size, MAX_PHOTO_FILESIZE_UPLOAD, update, context, file_reference_text='Converted file'):
+                return
+
             bot.send_photo(
                 chat_id,
                 output_bytes,

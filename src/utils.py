@@ -21,7 +21,7 @@ def check_admin(bot, message, analytics, admin_user_id):
     return True
 
 
-def ensure_size_under_limit(size, limit, update: Update, context: CallbackContext):
+def ensure_size_under_limit(size, limit, update: Update, context: CallbackContext, file_reference_text='File'):
     if size <= limit:
         return True
 
@@ -35,7 +35,8 @@ def ensure_size_under_limit(size, limit, update: Update, context: CallbackContex
 
         context.bot.send_message(
             chat_id,
-            'File size {} exceeds the maximum limit of {}.'.format(
+            '{} size {} exceeds the maximum limit of {}.'.format(
+                file_reference_text,
                 get_size_string_from_bytes(size),
                 get_size_string_from_bytes(limit)
             ),

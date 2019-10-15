@@ -13,6 +13,7 @@ GENERIC_DATE_FORMAT = '%Y-%m-%d'
 GENERIC_DATE_TIME_FORMAT = '{} %H:%M:%S'.format(GENERIC_DATE_FORMAT)
 
 EPOCH_DATE = datetime(1970, 1, 1)
+MAX_PHOTO_FILESIZE_UPLOAD = int(10E6)  # (50 MB)
 
 
 class LoggerFilter(object):
