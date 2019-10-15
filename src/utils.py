@@ -2,6 +2,9 @@
 
 import logging
 
+from telegram import Update
+from telegram.ext import CallbackContext
+
 from analytics import AnalyticsType
 
 logger = logging.getLogger(__name__)
@@ -16,6 +19,27 @@ def check_admin(bot, message, analytics, admin_user_id):
         return False
 
     return True
+
+
+def ensure_size_under_limit(size, limit, update: Update, context: CallbackContext):
+    if size <= limit:
+        return True
+
+    message = update.message
+
+    message_id = message.message_id
+    chat_id = message.chat.id
+
+    context.bot.send_message(
+        chat_id,
+        'File size {} exceeds the maximum limit of {}.'.format(
+            get_size_string_from_bytes(size),
+            get_size_string_from_bytes(limit)
+        ),
+        reply_to_message_id=message_id
+    )
+
+    return False
 
 
 def get_size_string_from_bytes(bytes, suffix='B'):

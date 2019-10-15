@@ -44,7 +44,7 @@ import youtube_dl
 
 from analytics import Analytics, AnalyticsType
 from database import User
-from utils import check_admin, get_size_string_from_bytes
+from utils import check_admin, ensure_size_under_limit
 
 BOT_TOKEN = None
 
@@ -139,18 +139,8 @@ def message_file_handler(update: Update, context: CallbackContext):
     message_id = message.message_id
     chat_id = message.chat.id
     attachment = message.effective_attachment
-    input_file_size = attachment.file_size
 
-    if input_file_size > MAX_FILESIZE_DOWNLOAD:
-        bot.send_message(
-            chat_id,
-            'File size {} exceeds the maximum limit of {}.'.format(
-                get_size_string_from_bytes(input_file_size),
-                get_size_string_from_bytes(MAX_FILESIZE_DOWNLOAD)
-            ),
-            reply_to_message_id=message_id
-        )
-
+    if not ensure_size_under_limit(attachment.file_size, MAX_FILESIZE_DOWNLOAD, update, context):
         return
 
     chat_type = update.effective_chat.type
