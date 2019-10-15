@@ -31,6 +31,7 @@ logging.getLogger().addHandler(warning_logging_handler)
 from PIL import Image
 from pdf2image import convert_from_bytes
 from telegram import Chat, ChatAction, MessageEntity, ParseMode, Update
+from telegram.constants import MAX_CAPTION_LENGTH
 from telegram.ext import (
     CommandHandler, MessageHandler,
     Filters, Updater,
@@ -242,13 +243,18 @@ def message_file_handler(update: Update, context: CallbackContext):
 
         output_bytes.seek(0)
 
+        caption = None
+
+        if input_file_name is not None:
+            caption = input_file_name[:MAX_CAPTION_LENGTH]
+
         if output_type == OutputType.AUDIO:
             bot.send_chat_action(chat_id, ChatAction.UPLOAD_AUDIO)
 
             bot.send_voice(
                 chat_id,
                 output_bytes,
-                caption=input_file_name,
+                caption=caption,
                 reply_to_message_id=message_id
             )
 
@@ -259,7 +265,7 @@ def message_file_handler(update: Update, context: CallbackContext):
             bot.send_video(
                 chat_id,
                 output_bytes,
-                caption=input_file_name,
+                caption=caption,
                 supports_streaming=True,
                 reply_to_message_id=message_id
             )
@@ -269,7 +275,7 @@ def message_file_handler(update: Update, context: CallbackContext):
             bot.send_photo(
                 chat_id,
                 output_bytes,
-                caption=input_file_name,
+                caption=caption,
                 reply_to_message_id=message_id
             )
 
@@ -377,6 +383,8 @@ def message_text_handler(update: Update, context: CallbackContext):
 
         output_bytes.write(mp4_bytes)
         output_bytes.seek(0)
+
+        caption = caption[:MAX_CAPTION_LENGTH]
 
         bot.send_chat_action(chat_id, ChatAction.UPLOAD_VIDEO)
 
