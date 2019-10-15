@@ -73,7 +73,7 @@ def create_or_update_user(bot, user):
     db_user = User.create_or_update_user(user.id, user.username)
 
     if db_user and ADMIN_USER_ID:
-            bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_markdown_description()), parse_mode=ParseMode.MARKDOWN)
+        bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_markdown_description()), parse_mode=ParseMode.MARKDOWN)
 
 
 def start_command_handler(update: Update, context: CallbackContext):
