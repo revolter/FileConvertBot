@@ -6,6 +6,7 @@ from threading import Thread
 import argparse
 import configparser
 import io
+import json
 import logging
 import os
 import sys
@@ -398,7 +399,7 @@ def message_text_handler(update: Update, context: CallbackContext):
 
 
 def error_handler(update: Update, context: CallbackContext):
-    logger.error('Update "{}" caused error "{}"'.format(update, context.error))
+    logger.error('Update "{}" caused error "{}"'.format(json.dumps(update.to_dict(), indent=4), context.error))
 
 
 def main():
