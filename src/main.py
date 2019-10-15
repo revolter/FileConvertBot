@@ -32,7 +32,7 @@ logging.getLogger().addHandler(warning_logging_handler)
 from PIL import Image
 from pdf2image import convert_from_bytes
 from telegram import Chat, ChatAction, MessageEntity, ParseMode, Update
-from telegram.constants import MAX_CAPTION_LENGTH, MAX_FILESIZE_DOWNLOAD
+from telegram.constants import MAX_CAPTION_LENGTH, MAX_FILESIZE_DOWNLOAD, MAX_FILESIZE_UPLOAD
 from telegram.ext import (
     CommandHandler, MessageHandler,
     Filters, Updater,
@@ -357,13 +357,7 @@ def message_text_handler(update: Update, context: CallbackContext):
             video_data = list(filter(lambda format: format['vcodec'] != 'none', requested_formats))[0]
             audio_data = list(filter(lambda format: format['acodec'] != 'none', requested_formats))[0]
 
-            if chat_type == Chat.PRIVATE and video_data['filesize'] > 50000000:
-                bot.send_message(
-                    chat_id,
-                    'Video file size exceeds the 50 MB limit.',
-                    reply_to_message_id=message_id
-                )
-
+            if not ensure_size_under_limit(video_data['filesize'], MAX_FILESIZE_UPLOAD, update, context):
                 return
 
             video_link = video_data['url']
