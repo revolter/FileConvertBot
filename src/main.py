@@ -32,7 +32,7 @@ logging.getLogger().addHandler(warning_logging_handler)
 from PIL import Image
 from pdf2image import convert_from_bytes
 from telegram import Chat, ChatAction, MessageEntity, ParseMode, Update
-from telegram.constants import MAX_CAPTION_LENGTH
+from telegram.constants import MAX_CAPTION_LENGTH, MAX_FILESIZE_DOWNLOAD
 from telegram.ext import (
     CommandHandler, MessageHandler,
     Filters, Updater,
@@ -44,7 +44,7 @@ import youtube_dl
 
 from analytics import Analytics, AnalyticsType
 from database import User
-from utils import check_admin
+from utils import check_admin, get_size_string_from_bytes
 
 BOT_TOKEN = None
 
@@ -136,12 +136,26 @@ def message_file_handler(update: Update, context: CallbackContext):
     if cli_args.debug and not check_admin(bot, message, analytics, ADMIN_USER_ID):
         return
 
-    chat_type = update.effective_chat.type
-
     message_id = message.message_id
     chat_id = message.chat.id
-    user = message.from_user
     attachment = message.effective_attachment
+    input_file_size = attachment.file_size
+
+    if input_file_size > MAX_FILESIZE_DOWNLOAD:
+        bot.send_message(
+            chat_id,
+            'File size {} exceeds the maximum limit of {}.'.format(
+                get_size_string_from_bytes(input_file_size),
+                get_size_string_from_bytes(MAX_FILESIZE_DOWNLOAD)
+            ),
+            reply_to_message_id=message_id
+        )
+
+        return
+
+    chat_type = update.effective_chat.type
+
+    user = message.from_user
 
     input_file_id = attachment.file_id
     input_file_name = attachment.file_name if getattr(attachment, 'file_name', None) else attachment.title
