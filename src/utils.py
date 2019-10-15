@@ -2,7 +2,7 @@
 
 import logging
 
-from telegram import Update
+from telegram import Chat, Update
 from telegram.ext import CallbackContext
 
 from analytics import AnalyticsType
@@ -25,19 +25,22 @@ def ensure_size_under_limit(size, limit, update: Update, context: CallbackContex
     if size <= limit:
         return True
 
-    message = update.message
+    chat_type = update.effective_chat.type
 
-    message_id = message.message_id
-    chat_id = message.chat.id
+    if chat_type == Chat.PRIVATE:
+        message = update.message
 
-    context.bot.send_message(
-        chat_id,
-        'File size {} exceeds the maximum limit of {}.'.format(
-            get_size_string_from_bytes(size),
-            get_size_string_from_bytes(limit)
-        ),
-        reply_to_message_id=message_id
-    )
+        message_id = message.message_id
+        chat_id = message.chat.id
+
+        context.bot.send_message(
+            chat_id,
+            'File size {} exceeds the maximum limit of {}.'.format(
+                get_size_string_from_bytes(size),
+                get_size_string_from_bytes(limit)
+            ),
+            reply_to_message_id=message_id
+        )
 
     return False
 
