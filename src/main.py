@@ -132,6 +132,7 @@ def users_command_handler(update: Update, context: CallbackContext):
 
 def message_file_handler(update: Update, context: CallbackContext):
     message = update.message
+    chat_type = update.effective_chat.type
     bot = context.bot
 
     if cli_args.debug and not check_admin(bot, message, analytics, ADMIN_USER_ID):
@@ -141,10 +142,18 @@ def message_file_handler(update: Update, context: CallbackContext):
     chat_id = message.chat.id
     attachment = message.effective_attachment
 
-    if not ensure_size_under_limit(attachment.file_size, MAX_FILESIZE_DOWNLOAD, update, context):
+    if type(attachment) is list:
+        if chat_type == Chat.PRIVATE:
+            bot.send_message(
+                chat_id,
+                'You need to send the image as a file to convert it to a sticker.',
+                reply_to_message_id=message_id
+            )
+
         return
 
-    chat_type = update.effective_chat.type
+    if not ensure_size_under_limit(attachment.file_size, MAX_FILESIZE_DOWNLOAD, update, context):
+        return
 
     user = message.from_user
 
@@ -420,7 +429,7 @@ def main():
     dispatcher.add_handler(CommandHandler('logs', logs_command_handler))
     dispatcher.add_handler(CommandHandler('users', users_command_handler, pass_args=True))
 
-    dispatcher.add_handler(MessageHandler(Filters.audio | Filters.document, message_file_handler))
+    dispatcher.add_handler(MessageHandler(Filters.audio | Filters.document | Filters.photo, message_file_handler))
     dispatcher.add_handler(MessageHandler(Filters.private & (Filters.text & (Filters.entity(MessageEntity.URL) | Filters.entity(MessageEntity.TEXT_LINK))), message_text_handler))
 
     dispatcher.add_error_handler(error_handler)
