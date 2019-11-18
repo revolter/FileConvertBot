@@ -46,6 +46,16 @@ def ensure_size_under_limit(size, limit, update: Update, context: CallbackContex
     return False
 
 
+def send_video(bot, chat_id, message_id, output_bytes, caption):
+    bot.send_video(
+        chat_id,
+        output_bytes,
+        caption=caption,
+        supports_streaming=True,
+        reply_to_message_id=message_id
+    )
+
+
 def get_size_string_from_bytes(bytes, suffix='B'):
     """
     Partially copied from https://stackoverflow.com/a/1094933/865175.

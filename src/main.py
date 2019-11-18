@@ -45,7 +45,7 @@ import youtube_dl
 from analytics import Analytics, AnalyticsType
 from constants import MAX_PHOTO_FILESIZE_UPLOAD
 from database import User
-from utils import check_admin, ensure_size_under_limit
+from utils import check_admin, ensure_size_under_limit, send_video
 
 BOT_TOKEN = None
 
@@ -284,13 +284,7 @@ def message_file_handler(update: Update, context: CallbackContext):
 
             bot.send_chat_action(chat_id, ChatAction.UPLOAD_VIDEO)
 
-            bot.send_video(
-                chat_id,
-                output_bytes,
-                caption=caption,
-                supports_streaming=True,
-                reply_to_message_id=message_id
-            )
+            send_video(bot, chat_id, message_id, output_bytes, caption)
 
             return
         elif output_type == OutputType.PHOTO:
@@ -407,13 +401,7 @@ def message_text_handler(update: Update, context: CallbackContext):
 
         bot.send_chat_action(chat_id, ChatAction.UPLOAD_VIDEO)
 
-        bot.send_video(
-            chat_id,
-            output_bytes,
-            caption=caption,
-            supports_streaming=True,
-            reply_to_message_id=message_id
-        )
+        send_video(bot, chat_id, message_id, output_bytes, caption)
 
 
 def error_handler(update: Update, context: CallbackContext):
