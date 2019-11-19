@@ -450,7 +450,7 @@ def main():
                 if cli_args.set_webhook:
                     logger.info('Updated webhook')
                 else:
-                    updater.bot.setWebhook = (lambda *args, **kwargs: None)
+                    updater.bot.set_webhook = (lambda *args, **kwargs: None)
 
                 updater.start_webhook(
                     listen='0.0.0.0',
