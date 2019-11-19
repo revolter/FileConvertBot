@@ -202,7 +202,7 @@ def message_file_handler(update: Update, context: CallbackContext):
                     output_type = OutputType.AUDIO
 
                     break
-                elif codec_name in ['vp6', 'vp8']:
+                elif codec_name in ['mpeg4', 'vp6', 'vp8']:
                     mp4_bytes = (
                         ffmpeg
                         .input(input_file_path)
