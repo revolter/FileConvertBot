@@ -16,6 +16,14 @@ EPOCH_DATE = datetime(1970, 1, 1)
 MAX_PHOTO_FILESIZE_UPLOAD = int(10E6)  # (50 MB)
 
 
+class OutputType:
+    NONE = 'none'
+    AUDIO = 'audio'
+    VIDEO = 'video'
+    PHOTO = 'photo'
+    STICKER = 'sticker'
+
+
 class LoggerFilter(object):
     def __init__(self, level):
         self.__level = level

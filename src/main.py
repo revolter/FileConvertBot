@@ -43,7 +43,10 @@ import ffmpeg
 import youtube_dl
 
 from analytics import Analytics, AnalyticsType
-from constants import MAX_PHOTO_FILESIZE_UPLOAD
+from constants import (
+    MAX_PHOTO_FILESIZE_UPLOAD,
+    OutputType
+)
 from database import User
 from utils import check_admin, ensure_size_under_limit, send_video
 
@@ -55,14 +58,6 @@ logger = logging.getLogger(__name__)
 
 updater = None
 analytics = None
-
-
-class OutputType:
-    NONE = 'none'
-    AUDIO = 'audio'
-    VIDEO = 'video'
-    PHOTO = 'photo'
-    STICKER = 'sticker'
 
 
 def stop_and_restart():
