@@ -184,7 +184,12 @@ def message_file_handler(update: Update, context: CallbackContext):
                 invalid_format = codec_name
 
                 if codec_name == 'mp3':
-                    opus_bytes = ffmpeg.input(input_file_path).output('pipe:', format='opus', strict='-2').run(capture_stdout=True)[0]
+                    opus_bytes = (
+                        ffmpeg
+                        .input(input_file_path)
+                        .output('pipe:', format='opus', strict='-2')
+                        .run(capture_stdout=True)
+                    )[0]
 
                     output_bytes.write(opus_bytes)
 
@@ -198,7 +203,12 @@ def message_file_handler(update: Update, context: CallbackContext):
 
                     break
                 elif codec_name in ['vp6', 'vp8']:
-                    mp4_bytes = ffmpeg.input(input_file_path).output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2').run(capture_stdout=True)[0]
+                    mp4_bytes = (
+                        ffmpeg
+                        .input(input_file_path)
+                        .output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
+                        .run(capture_stdout=True)
+                    )[0]
 
                     output_bytes.write(mp4_bytes)
 
@@ -387,7 +397,11 @@ def message_text_handler(update: Update, context: CallbackContext):
         video = ffmpeg.input(video_link)
         audio = ffmpeg.input(audio_link)
 
-        mp4_bytes = ffmpeg.output(video, audio, 'pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2').run(capture_stdout=True)[0]
+        mp4_bytes = (
+            ffmpeg
+            .output(video, audio, 'pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
+            .run(capture_stdout=True)
+        )[0]
 
         output_bytes.write(mp4_bytes)
         output_bytes.seek(0)
