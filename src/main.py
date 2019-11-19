@@ -179,7 +179,7 @@ def message_file_handler(update: Update, context: CallbackContext):
 
         if probe:
             for stream in probe['streams']:
-                codec_name = stream['codec_name']
+                codec_name = stream.get('codec_name')
 
                 invalid_format = codec_name
 
