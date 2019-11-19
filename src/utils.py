@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
 
+import json
 import logging
 
-from telegram import Chat, Update
+from telegram import (
+    Chat, Update,
+    InlineKeyboardButton, InlineKeyboardMarkup
+)
 from telegram.ext import CallbackContext
 
 from analytics import AnalyticsType
+from constants import ATTACHMENT_FILE_ID_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -46,12 +51,31 @@ def ensure_size_under_limit(size, limit, update: Update, context: CallbackContex
     return False
 
 
-def send_video(bot, chat_id, message_id, output_bytes, caption):
+def send_video(bot, chat_id, message_id, output_bytes, attachment, caption, chat_type):
+    if chat_type == Chat.PRIVATE and attachment is not None:
+        data = {
+            ATTACHMENT_FILE_ID_KEY: attachment.file_id
+        }
+
+        button = InlineKeyboardButton('Rounded', callback_data=json.dumps(data))
+        reply_markup = InlineKeyboardMarkup([[button]])
+    else:
+        reply_markup = None
+
     bot.send_video(
         chat_id,
         output_bytes,
         caption=caption,
         supports_streaming=True,
+        reply_to_message_id=message_id,
+        reply_markup=reply_markup
+    )
+
+
+def send_video_note(bot, chat_id, message_id, output_bytes):
+    bot.send_video_note(
+        chat_id,
+        output_bytes,
         reply_to_message_id=message_id
     )
 

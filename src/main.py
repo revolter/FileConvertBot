@@ -34,7 +34,7 @@ from pdf2image import convert_from_bytes
 from telegram import Chat, ChatAction, MessageEntity, ParseMode, Update
 from telegram.constants import MAX_CAPTION_LENGTH, MAX_FILESIZE_DOWNLOAD, MAX_FILESIZE_UPLOAD
 from telegram.ext import (
-    CommandHandler, MessageHandler,
+    CallbackQueryHandler, CommandHandler, MessageHandler,
     Filters, Updater,
     CallbackContext
 )
@@ -44,11 +44,16 @@ import youtube_dl
 
 from analytics import Analytics, AnalyticsType
 from constants import (
-    MAX_PHOTO_FILESIZE_UPLOAD,
+    MAX_PHOTO_FILESIZE_UPLOAD, MAX_VIDEO_NOTE_LENGTH,
+    VIDEO_CODEC_NAMES, VIDEO_NOTE_CROP_OFFSET_PARAMS, VIDEO_NOTE_CROP_SIZE_PARAMS,
+    ATTACHMENT_FILE_ID_KEY,
     OutputType
 )
 from database import User
-from utils import check_admin, ensure_size_under_limit, send_video
+from utils import (
+    check_admin, ensure_size_under_limit,
+    send_video, send_video_note
+)
 
 BOT_TOKEN = None
 
@@ -202,7 +207,7 @@ def message_file_handler(update: Update, context: CallbackContext):
                     output_type = OutputType.AUDIO
 
                     break
-                elif codec_name in ['mpeg4', 'vp6', 'vp8']:
+                elif codec_name in VIDEO_CODEC_NAMES:
                     mp4_bytes = (
                         ffmpeg
                         .input(input_file_path)
@@ -289,7 +294,7 @@ def message_file_handler(update: Update, context: CallbackContext):
 
             bot.send_chat_action(chat_id, ChatAction.UPLOAD_VIDEO)
 
-            send_video(bot, chat_id, message_id, output_bytes, caption)
+            send_video(bot, chat_id, message_id, output_bytes, attachment, caption, chat_type)
 
             return
         elif output_type == OutputType.PHOTO:
@@ -408,9 +413,121 @@ def message_text_handler(update: Update, context: CallbackContext):
 
         caption = caption[:MAX_CAPTION_LENGTH]
 
-        bot.send_chat_action(chat_id, ChatAction.UPLOAD_VIDEO)
+        # Video note isn't supported for videos downloaded from URLs yet.
+        send_video(bot, chat_id, message_id, output_bytes, None, caption, chat_type)
 
-        send_video(bot, chat_id, message_id, output_bytes, caption)
+
+def message_answer_handler(update: Update, context: CallbackContext):
+    callback_query = update.callback_query
+    callback_data = json.loads(callback_query.data)
+
+    if not callback_data:
+        callback_query.answer()
+
+        return
+
+    original_attachment_file_id = callback_data[ATTACHMENT_FILE_ID_KEY]
+
+    message = update.effective_message
+    chat_type = update.effective_chat.type
+    bot = context.bot
+
+    message_id = message.message_id
+    chat_id = message.chat.id
+
+    user = update.effective_user
+
+    create_or_update_user(bot, user)
+
+    analytics.track(AnalyticsType.MESSAGE, user)
+
+    if chat_type == Chat.PRIVATE:
+        bot.send_chat_action(chat_id, ChatAction.TYPING)
+
+    input_file = bot.get_file(original_attachment_file_id)
+    input_file_path = input_file.file_path
+
+    probe = None
+
+    try:
+        probe = ffmpeg.probe(input_file_path)
+    except:
+        pass
+
+    with io.BytesIO() as output_bytes:
+        output_type = OutputType.NONE
+
+        invalid_format = None
+
+        if probe:
+            for stream in probe['streams']:
+                codec_name = stream.get('codec_name')
+
+                invalid_format = codec_name
+
+                if codec_name in VIDEO_CODEC_NAMES:
+                    mp4_bytes = (
+                        ffmpeg
+                        .input(input_file_path, t=MAX_VIDEO_NOTE_LENGTH)
+                        .crop(
+                            VIDEO_NOTE_CROP_OFFSET_PARAMS,
+                            VIDEO_NOTE_CROP_OFFSET_PARAMS,
+                            VIDEO_NOTE_CROP_SIZE_PARAMS,
+                            VIDEO_NOTE_CROP_SIZE_PARAMS
+                        )
+                        .output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
+                        .run(capture_stdout=True)
+                    )[0]
+
+                    output_bytes.write(mp4_bytes)
+
+                    output_type = OutputType.VIDEO_NOTE
+
+                    break
+                else:
+                    continue
+
+        if output_type == OutputType.NONE:
+            if chat_type == Chat.PRIVATE:
+                if invalid_format is None:
+                    invalid_format = os.path.splitext(input_file_path)[1][1:]
+
+                bot.send_message(
+                    chat_id,
+                    'File type "{}" is not yet supported.'.format(invalid_format),
+                    reply_to_message_id=message_id
+                )
+
+            callback_query.answer()
+
+            return
+
+        output_bytes.seek(0)
+
+        output_file_size = output_bytes.getbuffer().nbytes
+
+        if output_type == OutputType.VIDEO_NOTE:
+            if not ensure_size_under_limit(output_file_size, MAX_FILESIZE_UPLOAD, update, context, file_reference_text='Converted file'):
+                callback_query.answer()
+
+                return
+
+            bot.send_chat_action(chat_id, ChatAction.UPLOAD_VIDEO)
+
+            send_video_note(bot, chat_id, message_id, output_bytes)
+
+            callback_query.answer()
+
+            return
+
+    if chat_type == Chat.PRIVATE:
+        bot.send_message(
+            chat_id,
+            'File type is not yet supported.',
+            reply_to_message_id=message_id
+        )
+
+    callback_query.answer()
 
 
 def error_handler(update: Update, context: CallbackContext):
@@ -428,6 +545,7 @@ def main():
 
     dispatcher.add_handler(MessageHandler(Filters.audio | Filters.document | Filters.photo, message_file_handler))
     dispatcher.add_handler(MessageHandler(Filters.private & (Filters.text & (Filters.entity(MessageEntity.URL) | Filters.entity(MessageEntity.TEXT_LINK))), message_text_handler))
+    dispatcher.add_handler(CallbackQueryHandler(message_answer_handler))
 
     dispatcher.add_error_handler(error_handler)
 

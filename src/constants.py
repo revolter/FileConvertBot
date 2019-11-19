@@ -13,13 +13,22 @@ GENERIC_DATE_FORMAT = '%Y-%m-%d'
 GENERIC_DATE_TIME_FORMAT = '{} %H:%M:%S'.format(GENERIC_DATE_FORMAT)
 
 EPOCH_DATE = datetime(1970, 1, 1)
+
 MAX_PHOTO_FILESIZE_UPLOAD = int(10E6)  # (50 MB)
+MAX_VIDEO_NOTE_LENGTH = 60
+
+VIDEO_CODEC_NAMES = ['mpeg4', 'vp6', 'vp8']
+VIDEO_NOTE_CROP_OFFSET_PARAMS = 'abs(in_w-in_h)'
+VIDEO_NOTE_CROP_SIZE_PARAMS = 'min(in_w,in_h)'
+
+ATTACHMENT_FILE_ID_KEY = 'i'
 
 
 class OutputType:
     NONE = 'none'
     AUDIO = 'audio'
     VIDEO = 'video'
+    VIDEO_NOTE = 'video_note'
     PHOTO = 'photo'
     STICKER = 'sticker'
 
