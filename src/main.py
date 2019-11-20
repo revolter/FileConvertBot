@@ -44,15 +44,14 @@ import youtube_dl
 
 from analytics import Analytics, AnalyticsType
 from constants import (
-    MAX_PHOTO_FILESIZE_UPLOAD, MAX_VIDEO_NOTE_LENGTH,
-    VIDEO_CODEC_NAMES, VIDEO_NOTE_CROP_OFFSET_PARAMS, VIDEO_NOTE_CROP_SIZE_PARAMS,
-    ATTACHMENT_FILE_ID_KEY,
+    MAX_PHOTO_FILESIZE_UPLOAD, VIDEO_CODEC_NAMES, ATTACHMENT_FILE_ID_KEY,
     OutputType
 )
 from database import User
 from utils import (
     check_admin, ensure_size_under_limit,
-    send_video, send_video_note
+    send_video, send_video_note,
+    convert
 )
 
 BOT_TOKEN = None
@@ -189,16 +188,11 @@ def message_file_handler(update: Update, context: CallbackContext):
                 invalid_format = codec_name
 
                 if codec_name == 'mp3':
-                    opus_bytes = (
-                        ffmpeg
-                        .input(input_file_url)
-                        .output('pipe:', format='opus', strict='-2')
-                        .run(capture_stdout=True)
-                    )[0]
+                    output_type = OutputType.AUDIO
+
+                    opus_bytes = convert(output_type, input_video_url=input_file_url)
 
                     output_bytes.write(opus_bytes)
-
-                    output_type = OutputType.AUDIO
 
                     break
                 elif codec_name == 'opus':
@@ -208,16 +202,11 @@ def message_file_handler(update: Update, context: CallbackContext):
 
                     break
                 elif codec_name in VIDEO_CODEC_NAMES:
-                    mp4_bytes = (
-                        ffmpeg
-                        .input(input_file_url)
-                        .output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
-                        .run(capture_stdout=True)
-                    )[0]
+                    output_type = OutputType.VIDEO
+
+                    mp4_bytes = convert(output_type, input_video_url=input_file_url)
 
                     output_bytes.write(mp4_bytes)
-
-                    output_type = OutputType.VIDEO
 
                     break
                 else:
@@ -374,22 +363,11 @@ def message_video_handler(update: Update, context: CallbackContext):
                 invalid_format = codec_name
 
                 if codec_name in VIDEO_CODEC_NAMES:
-                    mp4_bytes = (
-                        ffmpeg
-                        .input(input_file_url, t=MAX_VIDEO_NOTE_LENGTH)
-                        .crop(
-                            VIDEO_NOTE_CROP_OFFSET_PARAMS,
-                            VIDEO_NOTE_CROP_OFFSET_PARAMS,
-                            VIDEO_NOTE_CROP_SIZE_PARAMS,
-                            VIDEO_NOTE_CROP_SIZE_PARAMS
-                        )
-                        .output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
-                        .run(capture_stdout=True)
-                    )[0]
+                    output_type = OutputType.VIDEO_NOTE
+
+                    mp4_bytes = convert(output_type, input_video_url=input_file_url)
 
                     output_bytes.write(mp4_bytes)
-
-                    output_type = OutputType.VIDEO_NOTE
 
                     break
                 else:
@@ -503,14 +481,7 @@ def message_text_handler(update: Update, context: CallbackContext):
 
             return
 
-        video = ffmpeg.input(video_url)
-        audio = ffmpeg.input(audio_url)
-
-        mp4_bytes = (
-            ffmpeg
-            .output(video, audio, 'pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
-            .run(capture_stdout=True)
-        )[0]
+        mp4_bytes = convert(OutputType.VIDEO, input_video_url=video_url, input_audio_url=audio_url)
 
         output_bytes.write(mp4_bytes)
         output_bytes.seek(0)
@@ -570,22 +541,11 @@ def message_answer_handler(update: Update, context: CallbackContext):
                 invalid_format = codec_name
 
                 if codec_name in VIDEO_CODEC_NAMES:
-                    mp4_bytes = (
-                        ffmpeg
-                        .input(input_file_url, t=MAX_VIDEO_NOTE_LENGTH)
-                        .crop(
-                            VIDEO_NOTE_CROP_OFFSET_PARAMS,
-                            VIDEO_NOTE_CROP_OFFSET_PARAMS,
-                            VIDEO_NOTE_CROP_SIZE_PARAMS,
-                            VIDEO_NOTE_CROP_SIZE_PARAMS
-                        )
-                        .output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
-                        .run(capture_stdout=True)
-                    )[0]
+                    output_type = OutputType.VIDEO_NOTE
+
+                    mp4_bytes = convert(output_type, input_video_url=input_file_url)
 
                     output_bytes.write(mp4_bytes)
-
-                    output_type = OutputType.VIDEO_NOTE
 
                     break
                 else:

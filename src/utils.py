@@ -9,8 +9,15 @@ from telegram import (
 )
 from telegram.ext import CallbackContext
 
+import ffmpeg
+
 from analytics import AnalyticsType
-from constants import ATTACHMENT_FILE_ID_KEY
+from constants import (
+    MAX_VIDEO_NOTE_LENGTH,
+    VIDEO_CODEC_NAMES, VIDEO_NOTE_CROP_OFFSET_PARAMS, VIDEO_NOTE_CROP_SIZE_PARAMS,
+    ATTACHMENT_FILE_ID_KEY,
+    OutputType
+)
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +85,46 @@ def send_video_note(bot, chat_id, message_id, output_bytes):
         output_bytes,
         reply_to_message_id=message_id
     )
+
+
+def convert(output_type, input_video_url=None, input_audio_url=None):
+    if output_type == OutputType.AUDIO:
+        return (
+            ffmpeg
+            .input(input_video_url)
+            .output('pipe:', format='opus', strict='-2')
+            .run(capture_stdout=True)
+        )[0]
+    elif output_type == OutputType.VIDEO:
+        if input_audio_url is None:
+            return (
+                ffmpeg
+                .input(input_video_url)
+                .output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
+                .run(capture_stdout=True)
+            )[0]
+        else:
+            input_video = ffmpeg.input(input_video_url)
+            input_audio = ffmpeg.input(input_audio_url)
+
+            return (
+                ffmpeg
+                .output(input_video, input_audio, 'pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
+                .run(capture_stdout=True)
+            )[0]
+    elif output_type == OutputType.VIDEO_NOTE:
+        return (
+            ffmpeg
+            .input(input_video_url, t=MAX_VIDEO_NOTE_LENGTH)
+            .crop(
+                VIDEO_NOTE_CROP_OFFSET_PARAMS,
+                VIDEO_NOTE_CROP_OFFSET_PARAMS,
+                VIDEO_NOTE_CROP_SIZE_PARAMS,
+                VIDEO_NOTE_CROP_SIZE_PARAMS
+            )
+            .output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
+            .run(capture_stdout=True)
+        )[0]
 
 
 def get_size_string_from_bytes(bytes, suffix='B'):
