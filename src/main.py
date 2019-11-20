@@ -185,7 +185,8 @@ def message_file_handler(update: Update, context: CallbackContext):
             for stream in probe['streams']:
                 codec_name = stream.get('codec_name')
 
-                invalid_format = codec_name
+                if codec_name is not None:
+                    invalid_format = codec_name
 
                 if codec_name == 'mp3':
                     output_type = OutputType.AUDIO
@@ -360,7 +361,8 @@ def message_video_handler(update: Update, context: CallbackContext):
             for stream in probe['streams']:
                 codec_name = stream.get('codec_name')
 
-                invalid_format = codec_name
+                if codec_name is not None:
+                    invalid_format = codec_name
 
                 if codec_name in VIDEO_CODEC_NAMES:
                     output_type = OutputType.VIDEO_NOTE
@@ -538,7 +540,8 @@ def message_answer_handler(update: Update, context: CallbackContext):
             for stream in probe['streams']:
                 codec_name = stream.get('codec_name')
 
-                invalid_format = codec_name
+                if codec_name is not None:
+                    invalid_format = codec_name
 
                 if codec_name in VIDEO_CODEC_NAMES:
                     output_type = OutputType.VIDEO_NOTE
