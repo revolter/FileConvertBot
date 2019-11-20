@@ -113,18 +113,27 @@ def convert(output_type, input_video_url=None, input_audio_url=None):
                 .run(capture_stdout=True)
             )[0]
     elif output_type == OutputType.VIDEO_NOTE:
-        return (
+        # Copied from https://github.com/kkroening/ffmpeg-python/issues/184#issuecomment-504390452.
+
+        ffmpeg_input = (
             ffmpeg
             .input(input_video_url, t=MAX_VIDEO_NOTE_LENGTH)
+        )
+        ffmpeg_input_video = (
+            ffmpeg_input
+            .video
             .crop(
                 VIDEO_NOTE_CROP_OFFSET_PARAMS,
                 VIDEO_NOTE_CROP_OFFSET_PARAMS,
                 VIDEO_NOTE_CROP_SIZE_PARAMS,
                 VIDEO_NOTE_CROP_SIZE_PARAMS
             )
-            .output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
-            .run(capture_stdout=True)
-        )[0]
+        )
+        ffmpeg_input_audio = ffmpeg_input.audio
+        ffmpeg_joined = ffmpeg.concat(ffmpeg_input_video, ffmpeg_input_audio, v=1, a=1).node
+        ffmpeg_output = ffmpeg.output(ffmpeg_joined[0], ffmpeg_joined[1], 'pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
+
+        return ffmpeg_output.run(capture_stdout=True)[0]
 
 
 def get_size_string_from_bytes(bytes, suffix='B'):
