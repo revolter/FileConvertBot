@@ -44,7 +44,7 @@ import youtube_dl
 
 from analytics import Analytics, AnalyticsType
 from constants import (
-    MAX_PHOTO_FILESIZE_UPLOAD, VIDEO_CODEC_NAMES, ATTACHMENT_FILE_ID_KEY,
+    MAX_PHOTO_FILESIZE_UPLOAD, VIDEO_CODEC_NAMES, VIDEO_CODED_TYPE, ATTACHMENT_FILE_ID_KEY,
     OutputType
 )
 from database import User
@@ -184,8 +184,9 @@ def message_file_handler(update: Update, context: CallbackContext):
         if probe:
             for stream in probe['streams']:
                 codec_name = stream.get('codec_name')
+                codec_type = stream.get('codec_type')
 
-                if codec_name is not None:
+                if codec_name is not None and codec_type == VIDEO_CODED_TYPE:
                     invalid_format = codec_name
 
                 if codec_name == 'mp3':
@@ -360,8 +361,9 @@ def message_video_handler(update: Update, context: CallbackContext):
         if probe:
             for stream in probe['streams']:
                 codec_name = stream.get('codec_name')
+                codec_type = stream.get('codec_type')
 
-                if codec_name is not None:
+                if codec_name is not None and codec_type == VIDEO_CODED_TYPE:
                     invalid_format = codec_name
 
                 if codec_name in VIDEO_CODEC_NAMES:
@@ -539,8 +541,9 @@ def message_answer_handler(update: Update, context: CallbackContext):
         if probe:
             for stream in probe['streams']:
                 codec_name = stream.get('codec_name')
+                codec_type = stream.get('codec_type')
 
-                if codec_name is not None:
+                if codec_name is not None and codec_type == VIDEO_CODED_TYPE:
                     invalid_format = codec_name
 
                 if codec_name in VIDEO_CODEC_NAMES:
