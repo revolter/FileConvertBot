@@ -414,8 +414,6 @@ def message_video_handler(update: Update, context: CallbackContext):
 
         if output_type == OutputType.VIDEO_NOTE:
             if not ensure_size_under_limit(output_file_size, MAX_FILESIZE_UPLOAD, update, context, file_reference_text='Converted file'):
-                callback_query.answer()
-
                 return
 
             bot.send_chat_action(chat_id, ChatAction.UPLOAD_VIDEO)
