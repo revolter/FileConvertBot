@@ -168,12 +168,12 @@ def message_file_handler(update: Update, context: CallbackContext):
         bot.send_chat_action(chat_id, ChatAction.TYPING)
 
     input_file = bot.get_file(input_file_id)
-    input_file_path = input_file.file_path
+    input_file_url = input_file.file_path
 
     probe = None
 
     try:
-        probe = ffmpeg.probe(input_file_path)
+        probe = ffmpeg.probe(input_file_url)
     except:
         pass
 
@@ -191,7 +191,7 @@ def message_file_handler(update: Update, context: CallbackContext):
                 if codec_name == 'mp3':
                     opus_bytes = (
                         ffmpeg
-                        .input(input_file_path)
+                        .input(input_file_url)
                         .output('pipe:', format='opus', strict='-2')
                         .run(capture_stdout=True)
                     )[0]
@@ -210,7 +210,7 @@ def message_file_handler(update: Update, context: CallbackContext):
                 elif codec_name in VIDEO_CODEC_NAMES:
                     mp4_bytes = (
                         ffmpeg
-                        .input(input_file_path)
+                        .input(input_file_url)
                         .output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
                         .run(capture_stdout=True)
                     )[0]
@@ -256,7 +256,7 @@ def message_file_handler(update: Update, context: CallbackContext):
         if output_type == OutputType.NONE:
             if chat_type == Chat.PRIVATE:
                 if invalid_format is None:
-                    invalid_format = os.path.splitext(input_file_path)[1][1:]
+                    invalid_format = os.path.splitext(input_file_url)[1][1:]
 
                 bot.send_message(
                     chat_id,
@@ -353,12 +353,12 @@ def message_video_handler(update: Update, context: CallbackContext):
         bot.send_chat_action(chat_id, ChatAction.TYPING)
 
     input_file = bot.get_file(input_file_id)
-    input_file_path = input_file.file_path
+    input_file_url = input_file.file_path
 
     probe = None
 
     try:
-        probe = ffmpeg.probe(input_file_path)
+        probe = ffmpeg.probe(input_file_url)
     except:
         pass
 
@@ -376,7 +376,7 @@ def message_video_handler(update: Update, context: CallbackContext):
                 if codec_name in VIDEO_CODEC_NAMES:
                     mp4_bytes = (
                         ffmpeg
-                        .input(input_file_path, t=MAX_VIDEO_NOTE_LENGTH)
+                        .input(input_file_url, t=MAX_VIDEO_NOTE_LENGTH)
                         .crop(
                             VIDEO_NOTE_CROP_OFFSET_PARAMS,
                             VIDEO_NOTE_CROP_OFFSET_PARAMS,
@@ -398,7 +398,7 @@ def message_video_handler(update: Update, context: CallbackContext):
         if output_type == OutputType.NONE:
             if chat_type == Chat.PRIVATE:
                 if invalid_format is None:
-                    invalid_format = os.path.splitext(input_file_path)[1][1:]
+                    invalid_format = os.path.splitext(input_file_url)[1][1:]
 
                 bot.send_message(
                     chat_id,
@@ -549,12 +549,12 @@ def message_answer_handler(update: Update, context: CallbackContext):
         bot.send_chat_action(chat_id, ChatAction.TYPING)
 
     input_file = bot.get_file(original_attachment_file_id)
-    input_file_path = input_file.file_path
+    input_file_url = input_file.file_path
 
     probe = None
 
     try:
-        probe = ffmpeg.probe(input_file_path)
+        probe = ffmpeg.probe(input_file_url)
     except:
         pass
 
@@ -572,7 +572,7 @@ def message_answer_handler(update: Update, context: CallbackContext):
                 if codec_name in VIDEO_CODEC_NAMES:
                     mp4_bytes = (
                         ffmpeg
-                        .input(input_file_path, t=MAX_VIDEO_NOTE_LENGTH)
+                        .input(input_file_url, t=MAX_VIDEO_NOTE_LENGTH)
                         .crop(
                             VIDEO_NOTE_CROP_OFFSET_PARAMS,
                             VIDEO_NOTE_CROP_OFFSET_PARAMS,
@@ -594,7 +594,7 @@ def message_answer_handler(update: Update, context: CallbackContext):
         if output_type == OutputType.NONE:
             if chat_type == Chat.PRIVATE:
                 if invalid_format is None:
-                    invalid_format = os.path.splitext(input_file_path)[1][1:]
+                    invalid_format = os.path.splitext(input_file_url)[1][1:]
 
                 bot.send_message(
                     chat_id,
