@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Telegram Bot that converts _(for now)_ OPUS, MP3 and WebM files to voice messages, MP4 (MPEG4, VP6 and VP8) to video messages or video notes (rounded ones), PDF files to photo messages _(currently only the first page)_ and image files to stickers. It also tries to download videos from some websites and send them as video messages. The bot currently runs as [@FileConvertBot](https://t.me/FileConvertBot).
+Telegram Bot that converts _(for now)_ OPUS, MP3 and WebM files to voice messages, MP4 (MPEG4, VP6 and VP8) to video messages or video notes (rounded ones), video messages to video notes (rounded ones), PDF files to photo messages _(currently only the first page)_ and image files to stickers. It also tries to download videos from some websites and send them as video messages. The bot currently runs as [@FileConvertBot](https://t.me/FileConvertBot).
 
 Make sure you send the image as a file and know that the bot also works in groups!
 
