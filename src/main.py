@@ -649,7 +649,7 @@ def main():
     dispatcher.add_handler(CommandHandler('logs', logs_command_handler))
     dispatcher.add_handler(CommandHandler('users', users_command_handler, pass_args=True))
 
-    dispatcher.add_handler(MessageHandler(Filters.audio | Filters.document | Filters.photo, message_file_handler))
+    dispatcher.add_handler(MessageHandler((Filters.audio | Filters.document | Filters.photo) & (~ Filters.animation), message_file_handler))
     dispatcher.add_handler(MessageHandler(Filters.video, message_video_handler))
     dispatcher.add_handler(MessageHandler(Filters.private & (Filters.text & (Filters.entity(MessageEntity.URL) | Filters.entity(MessageEntity.TEXT_LINK))), message_text_handler))
     dispatcher.add_handler(CallbackQueryHandler(message_answer_handler))
