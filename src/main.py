@@ -326,6 +326,112 @@ def message_file_handler(update: Update, context: CallbackContext):
         )
 
 
+def message_video_handler(update: Update, context: CallbackContext):
+    message = update.effective_message
+    chat_type = update.effective_chat.type
+    bot = context.bot
+
+    if cli_args.debug and not check_admin(bot, message, analytics, ADMIN_USER_ID):
+        return
+
+    message_id = message.message_id
+    chat_id = message.chat.id
+    attachment = message.video
+
+    if not ensure_size_under_limit(attachment.file_size, MAX_FILESIZE_DOWNLOAD, update, context):
+        return
+
+    user = update.effective_user
+
+    input_file_id = attachment.file_id
+
+    create_or_update_user(bot, user)
+
+    analytics.track(AnalyticsType.MESSAGE, user)
+
+    if chat_type == Chat.PRIVATE:
+        bot.send_chat_action(chat_id, ChatAction.TYPING)
+
+    input_file = bot.get_file(input_file_id)
+    input_file_path = input_file.file_path
+
+    probe = None
+
+    try:
+        probe = ffmpeg.probe(input_file_path)
+    except:
+        pass
+
+    with io.BytesIO() as output_bytes:
+        output_type = OutputType.NONE
+
+        invalid_format = None
+
+        if probe:
+            for stream in probe['streams']:
+                codec_name = stream.get('codec_name')
+
+                invalid_format = codec_name
+
+                if codec_name in VIDEO_CODEC_NAMES:
+                    mp4_bytes = (
+                        ffmpeg
+                        .input(input_file_path, t=MAX_VIDEO_NOTE_LENGTH)
+                        .crop(
+                            VIDEO_NOTE_CROP_OFFSET_PARAMS,
+                            VIDEO_NOTE_CROP_OFFSET_PARAMS,
+                            VIDEO_NOTE_CROP_SIZE_PARAMS,
+                            VIDEO_NOTE_CROP_SIZE_PARAMS
+                        )
+                        .output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
+                        .run(capture_stdout=True)
+                    )[0]
+
+                    output_bytes.write(mp4_bytes)
+
+                    output_type = OutputType.VIDEO_NOTE
+
+                    break
+                else:
+                    continue
+
+        if output_type == OutputType.NONE:
+            if chat_type == Chat.PRIVATE:
+                if invalid_format is None:
+                    invalid_format = os.path.splitext(input_file_path)[1][1:]
+
+                bot.send_message(
+                    chat_id,
+                    'File type "{}" is not yet supported.'.format(invalid_format),
+                    reply_to_message_id=message_id
+                )
+
+            return
+
+        output_bytes.seek(0)
+
+        output_file_size = output_bytes.getbuffer().nbytes
+
+        if output_type == OutputType.VIDEO_NOTE:
+            if not ensure_size_under_limit(output_file_size, MAX_FILESIZE_UPLOAD, update, context, file_reference_text='Converted file'):
+                callback_query.answer()
+
+                return
+
+            bot.send_chat_action(chat_id, ChatAction.UPLOAD_VIDEO)
+
+            send_video_note(bot, chat_id, message_id, output_bytes)
+
+            return
+
+    if chat_type == Chat.PRIVATE:
+        bot.send_message(
+            chat_id,
+            'File type is not yet supported.',
+            reply_to_message_id=message_id
+        )
+
+
 def message_text_handler(update: Update, context: CallbackContext):
     message = update.message
     chat_type = update.effective_chat.type
@@ -544,6 +650,7 @@ def main():
     dispatcher.add_handler(CommandHandler('users', users_command_handler, pass_args=True))
 
     dispatcher.add_handler(MessageHandler(Filters.audio | Filters.document | Filters.photo, message_file_handler))
+    dispatcher.add_handler(MessageHandler(Filters.video, message_video_handler))
     dispatcher.add_handler(MessageHandler(Filters.private & (Filters.text & (Filters.entity(MessageEntity.URL) | Filters.entity(MessageEntity.TEXT_LINK))), message_text_handler))
     dispatcher.add_handler(CallbackQueryHandler(message_answer_handler))
 
