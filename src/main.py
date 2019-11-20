@@ -459,7 +459,7 @@ def message_text_handler(update: Update, context: CallbackContext):
 
     with io.BytesIO() as output_bytes:
         caption = None
-        video_link = None
+        video_url = None
 
         try:
             yt_dl_options = {
@@ -488,12 +488,12 @@ def message_text_handler(update: Update, context: CallbackContext):
             if not ensure_size_under_limit(video_data['filesize'], MAX_FILESIZE_UPLOAD, update, context):
                 return
 
-            video_link = video_data['url']
-            audio_link = audio_data['url']
+            video_url = video_data['url']
+            audio_url = audio_data['url']
         except Exception as error:
             logger.error('youtube-dl error: {}'.format(error))
 
-        if chat_type == Chat.PRIVATE and (caption is None or video_link is None):
+        if chat_type == Chat.PRIVATE and (caption is None or video_url is None):
             bot.send_message(
                 chat_id,
                 'No video found on "{}".'.format(input_link),
@@ -503,8 +503,8 @@ def message_text_handler(update: Update, context: CallbackContext):
 
             return
 
-        video = ffmpeg.input(video_link)
-        audio = ffmpeg.input(audio_link)
+        video = ffmpeg.input(video_url)
+        audio = ffmpeg.input(audio_url)
 
         mp4_bytes = (
             ffmpeg
