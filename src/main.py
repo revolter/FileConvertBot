@@ -322,6 +322,9 @@ def message_video_handler(update: Update, context: CallbackContext):
     chat_type = update.effective_chat.type
     bot = context.bot
 
+    if chat_type != Chat.PRIVATE:
+        return
+
     if cli_args.debug and not check_admin(bot, message, analytics, ADMIN_USER_ID):
         return
 
@@ -340,8 +343,7 @@ def message_video_handler(update: Update, context: CallbackContext):
 
     analytics.track(AnalyticsType.MESSAGE, user)
 
-    if chat_type == Chat.PRIVATE:
-        bot.send_chat_action(chat_id, ChatAction.TYPING)
+    bot.send_chat_action(chat_id, ChatAction.TYPING)
 
     input_file = bot.get_file(input_file_id)
     input_file_url = input_file.file_path
@@ -378,17 +380,14 @@ def message_video_handler(update: Update, context: CallbackContext):
                     continue
 
         if output_type == OutputType.NONE:
-            if chat_type == Chat.PRIVATE:
-                if invalid_format is None:
-                    invalid_format = os.path.splitext(input_file_url)[1][1:]
+            if invalid_format is None:
+                invalid_format = os.path.splitext(input_file_url)[1][1:]
 
-                bot.send_message(
-                    chat_id,
-                    'File type "{}" is not yet supported.'.format(invalid_format),
-                    reply_to_message_id=message_id
-                )
-
-            return
+            bot.send_message(
+                chat_id,
+                'File type "{}" is not yet supported.'.format(invalid_format),
+                reply_to_message_id=message_id
+            )
 
         output_bytes.seek(0)
 
@@ -404,12 +403,11 @@ def message_video_handler(update: Update, context: CallbackContext):
 
             return
 
-    if chat_type == Chat.PRIVATE:
-        bot.send_message(
-            chat_id,
-            'File type is not yet supported.',
-            reply_to_message_id=message_id
-        )
+    bot.send_message(
+        chat_id,
+        'File type is not yet supported.',
+        reply_to_message_id=message_id
+    )
 
 
 def message_text_handler(update: Update, context: CallbackContext):
