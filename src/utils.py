@@ -14,7 +14,7 @@ import ffmpeg
 from analytics import AnalyticsType
 from constants import (
     MAX_VIDEO_NOTE_LENGTH,
-    VIDEO_CODEC_NAMES, VIDEO_NOTE_CROP_OFFSET_PARAMS, VIDEO_NOTE_CROP_SIZE_PARAMS,
+    VIDEO_NOTE_CROP_OFFSET_PARAMS, VIDEO_NOTE_CROP_SIZE_PARAMS,
     ATTACHMENT_FILE_ID_KEY,
     OutputType
 )
