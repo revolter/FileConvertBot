@@ -47,7 +47,7 @@ def ensure_size_under_limit(size, limit, update: Update, context: CallbackContex
 
         context.bot.send_message(
             chat_id,
-            '{} size {} exceeds the maximum limit of {}.'.format(
+            '{} size {} exceeds the maximum limit of {} (limit imposed by Telegram, not by this bot).'.format(
                 file_reference_text,
                 get_size_string_from_bytes(size),
                 get_size_string_from_bytes(limit)
