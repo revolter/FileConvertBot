@@ -91,7 +91,7 @@ def convert(output_type, input_video_url=None, input_audio_url=None):
     if output_type == OutputType.AUDIO:
         return (
             ffmpeg
-            .input(input_video_url)
+            .input(input_audio_url)
             .output('pipe:', format='opus', strict='-2')
             .run(capture_stdout=True)
         )[0]

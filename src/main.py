@@ -192,7 +192,7 @@ def message_file_handler(update: Update, context: CallbackContext):
                 if codec_name == 'mp3':
                     output_type = OutputType.AUDIO
 
-                    opus_bytes = convert(output_type, input_video_url=input_file_url)
+                    opus_bytes = convert(output_type, input_audio_url=input_file_url)
 
                     output_bytes.write(opus_bytes)
 
