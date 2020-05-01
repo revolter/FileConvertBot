@@ -134,6 +134,13 @@ def convert(output_type, input_video_url=None, input_audio_url=None):
         ffmpeg_output = ffmpeg.output(ffmpeg_joined[0], ffmpeg_joined[1], 'pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
 
         return ffmpeg_output.run(capture_stdout=True)[0]
+    elif output_type == OutputType.FILE:
+        return (
+            ffmpeg
+            .input(input_audio_url)
+            .output('pipe:', format='mp3', strict='-2')
+            .run(capture_stdout=True)
+        )[0]
 
 
 def get_size_string_from_bytes(bytes, suffix='B'):

@@ -32,6 +32,7 @@ class OutputType:
     VIDEO_NOTE = 'video_note'
     PHOTO = 'photo'
     STICKER = 'sticker'
+    FILE = 'file'
 
 
 class LoggerFilter(object):

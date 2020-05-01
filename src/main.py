@@ -38,6 +38,7 @@ from telegram.ext import (
     Filters, Updater,
     CallbackContext
 )
+from telegram.utils.helpers import effective_message_type
 
 import ffmpeg
 import youtube_dl
@@ -141,6 +142,8 @@ def message_file_handler(update: Update, context: CallbackContext):
     chat_id = message.chat.id
     attachment = message.effective_attachment
 
+    message_type = effective_message_type(message)
+
     if type(attachment) is list:
         if chat_type == Chat.PRIVATE:
             bot.send_message(
@@ -186,38 +189,47 @@ def message_file_handler(update: Update, context: CallbackContext):
 
         invalid_format = None
 
-        if probe:
-            for stream in probe['streams']:
-                codec_name = stream.get('codec_name')
-                codec_type = stream.get('codec_type')
+        if message_type == 'voice':
+            output_type = OutputType.FILE
 
-                if codec_name is not None and codec_type == VIDEO_CODED_TYPE:
-                    invalid_format = codec_name
+            mp3_bytes = convert(output_type, input_audio_url=input_file_url)
 
-                if codec_name == 'mp3':
-                    output_type = OutputType.AUDIO
+            output_bytes.write(mp3_bytes)
 
-                    opus_bytes = convert(output_type, input_audio_url=input_file_url)
+            output_bytes.name = 'voice.mp3'
+        else:
+            if probe:
+                for stream in probe['streams']:
+                    codec_name = stream.get('codec_name')
+                    codec_type = stream.get('codec_type')
 
-                    output_bytes.write(opus_bytes)
+                    if codec_name is not None and codec_type == VIDEO_CODED_TYPE:
+                        invalid_format = codec_name
 
-                    break
-                elif codec_name == 'opus':
-                    input_file.download(out=output_bytes)
+                    if codec_name == 'mp3':
+                        output_type = OutputType.AUDIO
 
-                    output_type = OutputType.AUDIO
+                        opus_bytes = convert(output_type, input_audio_url=input_file_url)
 
-                    break
-                elif codec_name in VIDEO_CODEC_NAMES:
-                    output_type = OutputType.VIDEO
+                        output_bytes.write(opus_bytes)
 
-                    mp4_bytes = convert(output_type, input_video_url=input_file_url)
+                        break
+                    elif codec_name == 'opus':
+                        input_file.download(out=output_bytes)
 
-                    output_bytes.write(mp4_bytes)
+                        output_type = OutputType.AUDIO
 
-                    break
-                else:
-                    continue
+                        break
+                    elif codec_name in VIDEO_CODEC_NAMES:
+                        output_type = OutputType.VIDEO
+
+                        mp4_bytes = convert(output_type, input_video_url=input_file_url)
+
+                        output_bytes.write(mp4_bytes)
+
+                        break
+                    else:
+                        continue
 
         if output_type == OutputType.NONE:
             with io.BytesIO() as input_bytes:
@@ -307,6 +319,19 @@ def message_file_handler(update: Update, context: CallbackContext):
             return
         elif output_type == OutputType.STICKER:
             bot.send_sticker(
+                chat_id,
+                output_bytes,
+                reply_to_message_id=message_id
+            )
+
+            return
+        elif output_type == OutputType.FILE:
+            if not ensure_size_under_limit(output_file_size, MAX_FILESIZE_UPLOAD, update, context, file_reference_text='Converted file'):
+                return
+
+            bot.send_chat_action(chat_id, ChatAction.UPLOAD_DOCUMENT)
+
+            bot.send_document(
                 chat_id,
                 output_bytes,
                 reply_to_message_id=message_id
@@ -609,11 +634,16 @@ def error_handler(update: Update, context: CallbackContext):
 
 def main():
     message_file_filters = (
-        Filters.audio |
-        Filters.document |
-        Filters.photo
-    ) & (
-        ~ Filters.animation
+        (
+            Filters.audio |
+            Filters.document |
+            Filters.photo
+        ) & (
+            ~ Filters.animation
+        )
+    ) | (
+        Filters.private &
+        Filters.voice
     )
 
     message_text_filters = (
