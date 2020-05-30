@@ -13,6 +13,9 @@ and send them as video messages. The bot currently runs as
 Make sure you send the image as a file and know that the bot also works in
 groups!
 
+**All the processing is done in-memory, so no file is ever saved on the disk,
+not even temporary!**
+
 ## Getting Started
 
 These instructions will get you a copy of the project up and running on your
