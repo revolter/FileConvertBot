@@ -186,7 +186,7 @@ def message_file_handler(update: Update, context: CallbackContext):
 
     with io.BytesIO() as output_bytes:
         output_type = OutputType.NONE
-
+        caption = None
         invalid_format = None
 
         if message_type == 'voice':
@@ -197,6 +197,27 @@ def message_file_handler(update: Update, context: CallbackContext):
             output_bytes.write(mp3_bytes)
 
             output_bytes.name = 'voice.mp3'
+        elif message_type == 'sticker':
+            with io.BytesIO() as input_bytes:
+                input_file.download(out=input_bytes)
+
+                try:
+                    image = Image.open(input_bytes)
+
+                    with io.BytesIO() as image_bytes:
+                        image.save(image_bytes, format='PNG')
+
+                        output_bytes.write(image_bytes.getbuffer())
+
+                        output_type = OutputType.PHOTO
+
+                        sticker = message['sticker']
+                        emoji = sticker['emoji']
+                        set_name = sticker['set_name']
+
+                        caption = 'Sticker for the emoji "{}" from the set "{}"'.format(emoji, set_name)
+                except Exception as error:
+                    logger.error('PIL error: {}'.format(error))
         else:
             if probe:
                 for stream in probe['streams']:
@@ -277,9 +298,8 @@ def message_file_handler(update: Update, context: CallbackContext):
         output_bytes.seek(0)
 
         output_file_size = output_bytes.getbuffer().nbytes
-        caption = None
 
-        if input_file_name is not None:
+        if caption is None and input_file_name is not None:
             caption = input_file_name[:MAX_CAPTION_LENGTH]
 
         if output_type == OutputType.AUDIO:
@@ -637,7 +657,8 @@ def main():
         (
             Filters.audio |
             Filters.document |
-            Filters.photo
+            Filters.photo |
+            Filters.sticker
         ) & (
             ~ Filters.animation
         )

@@ -7,7 +7,7 @@ messages, HEVC and MP4 (MPEG4, VP6 and VP8) files to video messages or video
 notes (rounded ones), video messages to video notes (rounded ones), videos from
 some websites to video messages, PDF files to photo messages _(currently only
 the first page)_, image files to stickers. It also converts voice messages to
-MP3 files. It works in groups too!
+MP3 files and stickers to photo messages. It works in groups too!
 
 The bot currently runs as [@FileConvertBot](https://t.me/FileConvertBot).
 
