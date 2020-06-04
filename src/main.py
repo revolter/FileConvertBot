@@ -88,7 +88,7 @@ def start_command_handler(update: Update, context: CallbackContext):
 
     analytics.track(AnalyticsType.COMMAND, user, '/start')
 
-    bot.send_message(chat_id, 'Send me a file to try to convert it to a nice message or a sticker.')
+    bot.send_message(chat_id, 'Send me a file to try to convert it to something better.')
 
 
 def restart_command_handler(update: Update, context: CallbackContext):
