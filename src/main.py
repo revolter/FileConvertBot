@@ -657,14 +657,15 @@ def main():
         (
             Filters.audio |
             Filters.document |
-            Filters.photo |
-            Filters.sticker
+            Filters.photo
         ) & (
             ~ Filters.animation
         )
     ) | (
-        Filters.private &
-        Filters.voice
+        Filters.private & (
+            Filters.voice |
+            Filters.sticker
+        )
     )
 
     message_text_filters = (
