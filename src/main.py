@@ -160,7 +160,7 @@ def message_file_handler(update: Update, context: CallbackContext):
     user = message.from_user
 
     input_file_id = attachment.file_id
-    input_file_name = 'file'
+    input_file_name = None
 
     if getattr(attachment, 'file_name', None):
         input_file_name = attachment.file_name
