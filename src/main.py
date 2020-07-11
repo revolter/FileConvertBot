@@ -490,6 +490,7 @@ def message_text_handler(update: Update, context: CallbackContext):
     with io.BytesIO() as output_bytes:
         caption = None
         video_url = None
+        audio_url = None
 
         try:
             yt_dl_options = {
@@ -510,16 +511,20 @@ def message_text_handler(update: Update, context: CallbackContext):
             else:
                 caption = input_link
 
-            requested_formats = video['requested_formats']
+            if 'requested_formats' in video:
+                requested_formats = video['requested_formats']
 
-            video_data = list(filter(lambda format: format['vcodec'] != 'none', requested_formats))[0]
-            audio_data = list(filter(lambda format: format['acodec'] != 'none', requested_formats))[0]
+                video_data = list(filter(lambda format: format['vcodec'] != 'none', requested_formats))[0]
+                audio_data = list(filter(lambda format: format['acodec'] != 'none', requested_formats))[0]
 
-            if not ensure_size_under_limit(video_data['filesize'], MAX_FILESIZE_UPLOAD, update, context):
-                return
+                if not ensure_size_under_limit(video_data['filesize'], MAX_FILESIZE_UPLOAD, update, context):
+                    return
 
-            video_url = video_data['url']
-            audio_url = audio_data['url']
+                video_url = video_data['url']
+                audio_url = audio_data['url']
+            elif 'url' in video:
+                video_url = video['url']
+
         except Exception as error:
             logger.error('youtube-dl error: {}'.format(error))
 
