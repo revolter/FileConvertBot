@@ -131,7 +131,7 @@ def users_command_handler(update: Update, context: CallbackContext):
 
 
 def message_file_handler(update: Update, context: CallbackContext):
-    message = update.message
+    message = update.effective_message
     chat_type = update.effective_chat.type
     bot = context.bot
 
@@ -461,7 +461,7 @@ def message_video_handler(update: Update, context: CallbackContext):
 
 
 def message_text_handler(update: Update, context: CallbackContext):
-    message = update.message
+    message = update.effective_message
     chat_type = update.effective_chat.type
     bot = context.bot
 
