@@ -75,8 +75,8 @@ def setup(context):
     execute(context, 'python -m pip install --user pipenv')
 
 
-@task(pre=[config], hosts=env.hosts, help={'type': 'The type of the file to be deployed. Only required if `filename` is specified. Valid values are `source`, `meta` and `source_dirs`.', 'filename': 'An optional filename to deploy to the server'})
-def upload(context, type='source', filename=None):
+@task(pre=[config], hosts=env.hosts, help={'filename': 'An optional filename to deploy to the server'})
+def upload(context, filename=None):
     def upload_file(file_path_format, filename, destination_path_format='{.project_name}/{}'):
         context.put(file_path_format.format(filename), destination_path_format.format(env, filename))
 
@@ -87,7 +87,7 @@ def upload(context, type='source', filename=None):
             for file in files:
                 upload_file('src/{}/{{}}'.format(directory), file, '{{.project_name}}/{}/{{}}'.format(directory))
 
-    if not type or not filename:
+    if not filename:
         for filename in env.source_filenames:
             upload_file('src/{}', filename)
 
@@ -97,17 +97,24 @@ def upload(context, type='source', filename=None):
         for directory in env.source_directories:
             upload_directory(directory)
     else:
-        if type == 'source_dirs':
+        if filename in env.source_directories:
             upload_directory(filename)
         else:
-            file_path_format = 'src/{}' if type == 'source' else '{}'
+            if filename in env.source_filenames:
+                file_path_format = 'src/{}'
+            elif filename in env.meta_filenames:
+                file_path_format = '{}'
+            else:
+                print('Filename "{}" is not registered'.format(filename))
+
+                sys.exit(2)
 
             upload_file(file_path_format, filename)
 
 
-@task(pre=[config], hosts=env.hosts, help={'type': 'The type of the file to be deployed. Only required if `filename` is specified. Valid values are `source`, `meta` and `source_dirs`.', 'filename': 'An optional filename to deploy to the server'})
-def deploy(context, type='source', filename=None):
-    upload(context, type, filename)
+@task(pre=[config], hosts=env.hosts, help={'filename': 'An optional filename to deploy to the server'})
+def deploy(context, filename=None):
+    upload(context, filename)
 
     with context.cd(env.project_name):
         execute(context, 'python -m pipenv install --three')
