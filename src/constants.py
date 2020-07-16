@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import logging
 from datetime import datetime
 
 GOOGLE_HEADERS = {'User-Agent': 'FileConvertBot'}
@@ -33,7 +34,7 @@ class OutputType:
     FILE = 'file'
 
 
-class LoggerFilter(object):
+class LoggerFilter(logging.Filter):
     def __init__(self, level):
         self.__level = level
 
