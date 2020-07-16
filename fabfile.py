@@ -1,8 +1,7 @@
-from datetime import datetime
-
 import configparser
 import os
 import sys
+from datetime import datetime
 
 from fabric import task
 from invoke import env

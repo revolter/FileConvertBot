@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from threading import Thread
-
 import argparse
 import configparser
 import io
@@ -10,6 +8,7 @@ import json
 import logging
 import os
 import sys
+from threading import Thread
 
 from constants import LOGS_FORMAT, LoggerFilter
 

@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import logging
 from datetime import datetime
 from uuid import uuid4
-
-import logging
 
 from peewee import (
     Model,

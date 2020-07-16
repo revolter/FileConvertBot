@@ -3,13 +3,12 @@
 import json
 import logging
 
+import ffmpeg
 from telegram import (
     Chat, Update,
     InlineKeyboardButton, InlineKeyboardMarkup
 )
 from telegram.ext import CallbackContext
-
-import ffmpeg
 
 from analytics import AnalyticsType
 from constants import (
