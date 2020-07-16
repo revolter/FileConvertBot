@@ -125,17 +125,17 @@ def convert(output_type, input_video_url=None, input_audio_url=None):
         if output_type == OutputType.AUDIO:
             return (
                 ffmpeg
-                .input(input_audio_url)
-                .output('pipe:', format='opus', strict='-2')
-                .run(capture_stdout=True)
+                    .input(input_audio_url)
+                    .output('pipe:', format='opus', strict='-2')
+                    .run(capture_stdout=True)
             )[0]
         elif output_type == OutputType.VIDEO:
             if input_audio_url is None:
                 return (
                     ffmpeg
-                    .input(input_video_url)
-                    .output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
-                    .run(capture_stdout=True)
+                        .input(input_video_url)
+                        .output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
+                        .run(capture_stdout=True)
                 )[0]
             else:
                 input_video = ffmpeg.input(input_video_url)
@@ -143,25 +143,25 @@ def convert(output_type, input_video_url=None, input_audio_url=None):
 
                 return (
                     ffmpeg
-                    .output(input_video, input_audio, 'pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
-                    .run(capture_stdout=True)
+                        .output(input_video, input_audio, 'pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
+                        .run(capture_stdout=True)
                 )[0]
         elif output_type == OutputType.VIDEO_NOTE:
             # Copied from https://github.com/kkroening/ffmpeg-python/issues/184#issuecomment-504390452.
 
             ffmpeg_input = (
                 ffmpeg
-                .input(input_video_url, t=MAX_VIDEO_NOTE_LENGTH)
+                    .input(input_video_url, t=MAX_VIDEO_NOTE_LENGTH)
             )
             ffmpeg_input_video = (
                 ffmpeg_input
-                .video
-                .crop(
-                    VIDEO_NOTE_CROP_OFFSET_PARAMS,
-                    VIDEO_NOTE_CROP_OFFSET_PARAMS,
-                    VIDEO_NOTE_CROP_SIZE_PARAMS,
-                    VIDEO_NOTE_CROP_SIZE_PARAMS
-                )
+                    .video
+                    .crop(
+                        VIDEO_NOTE_CROP_OFFSET_PARAMS,
+                        VIDEO_NOTE_CROP_OFFSET_PARAMS,
+                        VIDEO_NOTE_CROP_SIZE_PARAMS,
+                        VIDEO_NOTE_CROP_SIZE_PARAMS
+                    )
             )
 
             ffmpeg_output: ffmpeg.nodes.OutputStream
@@ -178,9 +178,9 @@ def convert(output_type, input_video_url=None, input_audio_url=None):
         elif output_type == OutputType.FILE:
             return (
                 ffmpeg
-                .input(input_audio_url)
-                .output('pipe:', format='mp3', strict='-2')
-                .run(capture_stdout=True)
+                    .input(input_audio_url)
+                    .output('pipe:', format='mp3', strict='-2')
+                    .run(capture_stdout=True)
             )[0]
     except ffmpeg.Error:
         return None

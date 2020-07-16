@@ -99,9 +99,7 @@ class User(BaseModel):
             query = query.order_by(sort_field.desc()).limit(10)
 
             for user in reversed(query):
-                users_table = '{}\n{} | {} | {}'.format(
-                    users_table,
-
+                users_table += '\n{} | {} | {}'.format(
                     user.get_markdown_description(),
 
                     user.get_created_at(),
