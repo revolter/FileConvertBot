@@ -1,6 +1,14 @@
 import logging
 
-from constants import LOGS_FORMAT, LoggerFilter
+from constants import LOGS_FORMAT
+
+
+class LoggerFilter(logging.Filter):
+    def __init__(self, level):
+        self.level = level
+
+    def filter(self, log_record):
+        return log_record.levelno <= self.level
 
 
 def configure_root_logger():
