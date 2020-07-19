@@ -10,24 +10,6 @@ import os
 import sys
 from threading import Thread
 
-from constants import LOGS_FORMAT, LoggerFilter
-
-logging.basicConfig(format=LOGS_FORMAT, level=logging.INFO)
-
-error_logging_handler = logging.FileHandler('errors.log')
-error_logging_handler.setFormatter(logging.Formatter(LOGS_FORMAT))
-error_logging_handler.setLevel(logging.ERROR)
-error_logging_handler.addFilter(LoggerFilter(logging.ERROR))
-
-logging.getLogger().addHandler(error_logging_handler)
-
-warning_logging_handler = logging.FileHandler('warnings.log')
-warning_logging_handler.setFormatter(logging.Formatter(LOGS_FORMAT))
-warning_logging_handler.setLevel(logging.WARNING)
-warning_logging_handler.addFilter(LoggerFilter(logging.WARNING))
-
-logging.getLogger().addHandler(warning_logging_handler)
-
 from PIL import Image
 from pdf2image import convert_from_bytes
 from telegram import Chat, ChatAction, MessageEntity, ParseMode, Update
@@ -47,6 +29,7 @@ from constants import (
     MAX_PHOTO_FILESIZE_UPLOAD, VIDEO_CODEC_NAMES, VIDEO_CODED_TYPE,
     OutputType
 )
+from custom_logger import configure_root_logger
 from database import User
 from utils import (
     check_admin,
@@ -55,11 +38,13 @@ from utils import (
     get_file_size, convert
 )
 
+configure_root_logger()
+
+logger = logging.getLogger(__name__)
+
 BOT_TOKEN = None
 
 ADMIN_USER_ID = None
-
-logger = logging.getLogger(__name__)
 
 updater = None
 analytics = None

@@ -31,6 +31,8 @@ env.source_filenames = [
     'analytics.py',
     'constants.py',
 
+    'custom_logger.py',
+
     'config.cfg'
 ]
 env.meta_filenames = [
