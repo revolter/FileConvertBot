@@ -10,8 +10,10 @@ import os
 import sys
 from threading import Thread
 
-from PIL import Image
+import ffmpeg
+import youtube_dl
 from pdf2image import convert_from_bytes
+from PIL import Image
 from telegram import Chat, ChatAction, MessageEntity, ParseMode, Update
 from telegram.constants import MAX_CAPTION_LENGTH, MAX_FILESIZE_DOWNLOAD, MAX_FILESIZE_UPLOAD
 from telegram.ext import (
@@ -20,9 +22,6 @@ from telegram.ext import (
     CallbackContext
 )
 from telegram.utils.helpers import effective_message_type
-
-import ffmpeg
-import youtube_dl
 
 from analytics import Analytics, AnalyticsType
 from constants import (
