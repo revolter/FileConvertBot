@@ -517,8 +517,14 @@ def message_text_handler(update: Update, context: CallbackContext):
                 video_data = list(filter(lambda format: format['vcodec'] != 'none', requested_formats))[0]
                 audio_data = list(filter(lambda format: format['acodec'] != 'none', requested_formats))[0]
 
-                if not ensure_size_under_limit(video_data['filesize'], MAX_FILESIZE_UPLOAD, update, context):
-                    return
+                file_size = None
+
+                if 'filesize' in video_data:
+                    file_size = video_data['filesize']
+
+                if file_size is not None:
+                    if not ensure_size_under_limit(file_size, MAX_FILESIZE_UPLOAD, update, context):
+                        return
 
                 video_url = video_data['url']
                 audio_url = audio_data['url']
