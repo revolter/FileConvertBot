@@ -186,15 +186,15 @@ def convert(output_type, input_video_url=None, input_audio_url=None):
         return None
 
 
-def get_size_string_from_bytes(bytes, suffix='B'):
+def get_size_string_from_bytes(bytes_count, suffix='B'):
     """
     Partially copied from https://stackoverflow.com/a/1094933/865175.
     """
 
     for unit in ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']:
-        if abs(bytes) < 1000.0:
-            return '%3.1f %s%s' % (bytes, unit, suffix)
+        if abs(bytes_count) < 1000.0:
+            return '%3.1f %s%s' % (bytes_count, unit, suffix)
 
-        bytes /= 1000.0
+        bytes_count /= 1000.0
 
-    return '%.1f %s%s' % (bytes, 'Y', suffix)
+    return '%.1f %s%s' % (bytes_count, 'Y', suffix)

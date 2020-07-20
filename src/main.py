@@ -528,8 +528,8 @@ def message_text_handler(update: Update, context: CallbackContext):
             if 'requested_formats' in video:
                 requested_formats = video['requested_formats']
 
-                video_data = list(filter(lambda format: format['vcodec'] != 'none', requested_formats))[0]
-                audio_data = list(filter(lambda format: format['acodec'] != 'none', requested_formats))[0]
+                video_data = list(filter(lambda requested_format: requested_format['vcodec'] != 'none', requested_formats))[0]
+                audio_data = list(filter(lambda requested_format: requested_format['acodec'] != 'none', requested_formats))[0]
 
                 if 'filesize' in video_data:
                     file_size = video_data['filesize']
@@ -808,8 +808,8 @@ if __name__ == '__main__':
         config.read('config.cfg')
 
         BOT_TOKEN = config.get('Telegram', 'Key' if cli_args.server else 'TestKey')
-    except configparser.Error as error:
-        logger.error('Config error: {}'.format(error))
+    except configparser.Error as config_error:
+        logger.error('Config error: {}'.format(config_error))
 
         sys.exit(1)
 
@@ -826,7 +826,7 @@ if __name__ == '__main__':
 
         if not cli_args.debug:
             analytics.googleToken = config.get('Google', 'Key')
-    except configparser.Error as error:
-        logger.warning('Config error: {}'.format(error))
+    except configparser.Error as config_error:
+        logger.warning('Config error: {}'.format(config_error))
 
     main()
