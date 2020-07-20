@@ -45,8 +45,8 @@ BOT_TOKEN = None
 
 ADMIN_USER_ID = None
 
-updater = None
-analytics = None
+updater: Updater
+analytics: Analytics
 
 
 def stop_and_restart():
