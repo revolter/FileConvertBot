@@ -531,7 +531,7 @@ def message_text_handler(update: Update, context: CallbackContext):
         if chat_type == Chat.PRIVATE and (caption is None or video_url is None):
             bot.send_message(
                 chat_id,
-                'No video found on "{}".'.format(input_link),
+                'No video found on this link.',
                 disable_web_page_preview=True,
                 reply_to_message_id=message_id
             )
