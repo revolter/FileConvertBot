@@ -1,12 +1,12 @@
 import configparser
+import datetime
 import os
 import sys
-from datetime import datetime
 
-from fabric import task
+import fabric
 from invoke import env
 
-from src.constants import GENERIC_DATE_FORMAT
+import src.constants
 
 try:
     config = configparser.ConfigParser()
@@ -44,13 +44,13 @@ env.source_directories = [
 ]
 
 
-@task
+@fabric.task
 def configure(context):
     context.user = env.user
     context.connect_kwargs.key_filename = os.path.expanduser(env.key_filename)
 
 
-@task(pre=[configure], hosts=env.hosts, help={'command': 'The shell command to execute on the server'})
+@fabric.task(pre=[configure], hosts=env.hosts, help={'command': 'The shell command to execute on the server'})
 def execute(context, command=None):
     if not command:
         return
@@ -58,7 +58,7 @@ def execute(context, command=None):
     context.run(command)
 
 
-@task(pre=[configure], hosts=env.hosts)
+@fabric.task(pre=[configure], hosts=env.hosts)
 def cleanup(context):
     prompt_message = 'Are you sure you want to completely delete the project "{0.project_name}" from "{0.hosts[0]}"? y/n: '.format(env)
     response = input(prompt_message)
@@ -68,7 +68,7 @@ def cleanup(context):
         execute(context, 'rm -rf {0.project_path}/{0.project_name}'.format(env))
 
 
-@task(pre=[configure, cleanup], hosts=env.hosts)
+@fabric.task(pre=[configure, cleanup], hosts=env.hosts)
 def setup(context):
     execute(context, 'mkdir -p {0.project_path}/{0.project_name}'.format(env))
     execute(context, 'ln -s {0.project_path}/{0.project_name} {0.project_name}'.format(env))
@@ -76,7 +76,7 @@ def setup(context):
     execute(context, 'python -m pip install --user pipenv')
 
 
-@task(pre=[configure], hosts=env.hosts, help={'filename': 'An optional filename to deploy to the server'})
+@fabric.task(pre=[configure], hosts=env.hosts, help={'filename': 'An optional filename to deploy to the server'})
 def upload(context, filename=None):
     def upload_file(file_format, file_name, destination_path_format='{.project_name}/{}'):
         context.put(file_format.format(file_name), destination_path_format.format(env, file_name))
@@ -113,7 +113,7 @@ def upload(context, filename=None):
             upload_file(file_path_format, filename)
 
 
-@task(pre=[configure], hosts=env.hosts, help={'filename': 'An optional filename to deploy to the server'})
+@fabric.task(pre=[configure], hosts=env.hosts, help={'filename': 'An optional filename to deploy to the server'})
 def deploy(context, filename=None):
     upload(context, filename)
 
@@ -121,9 +121,9 @@ def deploy(context, filename=None):
         execute(context, 'python -m pipenv install --three')
 
 
-@task(pre=[configure], hosts=env.hosts, help={'filename': 'The filename to backup locally from the server'})
+@fabric.task(pre=[configure], hosts=env.hosts, help={'filename': 'The filename to backup locally from the server'})
 def backup(context, filename):
-    current_date = datetime.now().strftime(GENERIC_DATE_FORMAT)
+    current_date = datetime.datetime.now().strftime(src.constants.GENERIC_DATE_FORMAT)
     name, extension = os.path.splitext(filename)
 
     # This currently does nothing: http://www.fabfile.org/upgrading.html?highlight=cd#actual-remote-steps.
@@ -131,6 +131,6 @@ def backup(context, filename):
         context.get('{.project_name}/{}'.format(env, filename), 'backup_{}_{}{}'.format(name, current_date, extension))
 
 
-@task(pre=[configure], hosts=env.hosts)
+@fabric.task(pre=[configure], hosts=env.hosts)
 def backup_db(context):
     backup(context, 'file_convert.sqlite')

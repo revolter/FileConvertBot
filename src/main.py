@@ -8,36 +8,23 @@ import json
 import logging
 import os
 import sys
-from threading import Thread
+import threading
 
 import ffmpeg
+import pdf2image
+import PIL
+import telegram
+import telegram.ext
+import telegram.utils.helpers
 import youtube_dl
-from pdf2image import convert_from_bytes
-from PIL import Image
-from telegram import Chat, ChatAction, MessageEntity, ParseMode, Update
-from telegram.constants import MAX_CAPTION_LENGTH, MAX_FILESIZE_DOWNLOAD, MAX_FILESIZE_UPLOAD
-from telegram.ext import (
-    CallbackQueryHandler, CommandHandler, MessageHandler,
-    Filters, Updater,
-    CallbackContext
-)
-from telegram.utils.helpers import effective_message_type
 
-from analytics import AnalyticsHandler, AnalyticsType
-from constants import (
-    MAX_PHOTO_FILESIZE_UPLOAD, VIDEO_CODEC_NAMES, VIDEO_CODED_TYPE,
-    OutputType
-)
-from custom_logger import configure_root_logger
-from database import User
-from utils import (
-    check_admin,
-    ensure_size_under_limit, ensure_valid_converted_file,
-    send_video, send_video_note,
-    get_file_size, convert
-)
+import analytics
+import constants
+import custom_logger
+import database
+import utils
 
-configure_root_logger()
+custom_logger.configure_root_logger()
 
 logger = logging.getLogger(__name__)
 
@@ -45,8 +32,8 @@ BOT_TOKEN = None
 
 ADMIN_USER_ID = None
 
-updater: Updater
-analytics_handler: AnalyticsHandler
+updater: telegram.ext.Updater
+analytics_handler: analytics.AnalyticsHandler
 
 
 def stop_and_restart():
@@ -55,13 +42,13 @@ def stop_and_restart():
 
 
 def create_or_update_user(bot, user):
-    db_user = User.create_or_update_user(user.id, user.username)
+    db_user = database.User.create_or_update_user(user.id, user.username)
 
     if db_user and ADMIN_USER_ID:
-        bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_markdown_description()), parse_mode=ParseMode.MARKDOWN)
+        bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_markdown_description()), parse_mode=telegram.ParseMode.MARKDOWN)
 
 
-def start_command_handler(update: Update, context: CallbackContext):
+def start_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
     message = update.message
     bot = context.bot
 
@@ -70,30 +57,30 @@ def start_command_handler(update: Update, context: CallbackContext):
 
     create_or_update_user(bot, user)
 
-    analytics_handler.track(AnalyticsType.COMMAND, user, '/start')
+    analytics_handler.track(analytics.AnalyticsType.COMMAND, user, '/start')
 
     bot.send_message(chat_id, 'Send me a file to try to convert it to something better.')
 
 
-def restart_command_handler(update: Update, context: CallbackContext):
+def restart_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
     message = update.message
     bot = context.bot
 
-    if not check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
+    if not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     bot.send_message(message.chat_id, 'Restarting...')
 
-    Thread(target=stop_and_restart).start()
+    threading.Thread(target=stop_and_restart).start()
 
 
-def logs_command_handler(update: Update, context: CallbackContext):
+def logs_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
     message = update.message
     bot = context.bot
 
     chat_id = message.chat_id
 
-    if not check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
+    if not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     try:
@@ -102,34 +89,34 @@ def logs_command_handler(update: Update, context: CallbackContext):
         bot.send_message(chat_id, 'Log is empty')
 
 
-def users_command_handler(update: Update, context: CallbackContext):
+def users_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
     message = update.message
     bot = context.bot
 
     chat_id = message.chat_id
 
-    if not check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
+    if not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
-    bot.send_message(chat_id, User.get_users_table('updated' in context.args), parse_mode=ParseMode.MARKDOWN)
+    bot.send_message(chat_id, database.User.get_users_table('updated' in context.args), parse_mode=telegram.ParseMode.MARKDOWN)
 
 
-def message_file_handler(update: Update, context: CallbackContext):
+def message_file_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
     message = update.effective_message
     chat_type = update.effective_chat.type
     bot = context.bot
 
-    if cli_args.debug and not check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
+    if cli_args.debug and not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     message_id = message.message_id
     chat_id = message.chat.id
     attachment = message.effective_attachment
 
-    message_type = effective_message_type(message)
+    message_type = telegram.utils.helpers.effective_message_type(message)
 
     if type(attachment) is list:
-        if chat_type == Chat.PRIVATE:
+        if chat_type == telegram.Chat.PRIVATE:
             bot.send_message(
                 chat_id,
                 'You need to send the image as a file to convert it to a sticker.',
@@ -138,7 +125,7 @@ def message_file_handler(update: Update, context: CallbackContext):
 
         return
 
-    if not ensure_size_under_limit(attachment.file_size, MAX_FILESIZE_DOWNLOAD, update, context):
+    if not utils.ensure_size_under_limit(attachment.file_size, telegram.constants.MAX_FILESIZE_DOWNLOAD, update, context):
         return
 
     user = message.from_user
@@ -153,10 +140,10 @@ def message_file_handler(update: Update, context: CallbackContext):
 
     create_or_update_user(bot, user)
 
-    analytics_handler.track(AnalyticsType.MESSAGE, user)
+    analytics_handler.track(analytics.AnalyticsType.MESSAGE, user)
 
-    if chat_type == Chat.PRIVATE:
-        bot.send_chat_action(chat_id, ChatAction.TYPING)
+    if chat_type == telegram.Chat.PRIVATE:
+        bot.send_chat_action(chat_id, telegram.ChatAction.TYPING)
 
     input_file = bot.get_file(input_file_id)
     input_file_url = input_file.file_path
@@ -169,16 +156,16 @@ def message_file_handler(update: Update, context: CallbackContext):
         pass
 
     with io.BytesIO() as output_bytes:
-        output_type = OutputType.NONE
+        output_type = constants.OutputType.NONE
         caption = None
         invalid_format = None
 
         if message_type == 'voice':
-            output_type = OutputType.FILE
+            output_type = constants.OutputType.FILE
 
-            mp3_bytes = convert(output_type, input_audio_url=input_file_url)
+            mp3_bytes = utils.convert(output_type, input_audio_url=input_file_url)
 
-            if not ensure_valid_converted_file(
+            if not utils.ensure_valid_converted_file(
                 file_bytes=mp3_bytes,
                 update=update,
                 context=context
@@ -193,14 +180,14 @@ def message_file_handler(update: Update, context: CallbackContext):
                 input_file.download(out=input_bytes)
 
                 try:
-                    image = Image.open(input_bytes)
+                    image = PIL.Image.open(input_bytes)
 
                     with io.BytesIO() as image_bytes:
                         image.save(image_bytes, format='PNG')
 
                         output_bytes.write(image_bytes.getbuffer())
 
-                        output_type = OutputType.PHOTO
+                        output_type = constants.OutputType.PHOTO
 
                         sticker = message['sticker']
                         emoji = sticker['emoji']
@@ -215,15 +202,15 @@ def message_file_handler(update: Update, context: CallbackContext):
                     codec_name = stream.get('codec_name')
                     codec_type = stream.get('codec_type')
 
-                    if codec_name is not None and codec_type == VIDEO_CODED_TYPE:
+                    if codec_name is not None and codec_type == constants.VIDEO_CODED_TYPE:
                         invalid_format = codec_name
 
                     if codec_name == 'mp3':
-                        output_type = OutputType.AUDIO
+                        output_type = constants.OutputType.AUDIO
 
-                        opus_bytes = convert(output_type, input_audio_url=input_file_url)
+                        opus_bytes = utils.convert(output_type, input_audio_url=input_file_url)
 
-                        if not ensure_valid_converted_file(
+                        if not utils.ensure_valid_converted_file(
                             file_bytes=opus_bytes,
                             update=update,
                             context=context
@@ -236,15 +223,15 @@ def message_file_handler(update: Update, context: CallbackContext):
                     elif codec_name == 'opus':
                         input_file.download(out=output_bytes)
 
-                        output_type = OutputType.AUDIO
+                        output_type = constants.OutputType.AUDIO
 
                         break
-                    elif codec_name in VIDEO_CODEC_NAMES:
-                        output_type = OutputType.VIDEO
+                    elif codec_name in constants.VIDEO_CODEC_NAMES:
+                        output_type = constants.OutputType.VIDEO
 
-                        mp4_bytes = convert(output_type, input_video_url=input_file_url)
+                        mp4_bytes = utils.convert(output_type, input_video_url=input_file_url)
 
-                        if not ensure_valid_converted_file(
+                        if not utils.ensure_valid_converted_file(
                             file_bytes=mp4_bytes,
                             update=update,
                             context=context
@@ -257,12 +244,12 @@ def message_file_handler(update: Update, context: CallbackContext):
                     else:
                         continue
 
-        if output_type == OutputType.NONE:
+        if output_type == constants.OutputType.NONE:
             with io.BytesIO() as input_bytes:
                 input_file.download(out=input_bytes)
 
                 try:
-                    images = convert_from_bytes(input_bytes.getbuffer())
+                    images = pdf2image.convert_from_bytes(input_bytes.getbuffer())
                     image = images[0]
 
                     with io.BytesIO() as image_bytes:
@@ -270,25 +257,25 @@ def message_file_handler(update: Update, context: CallbackContext):
 
                         output_bytes.write(image_bytes.getbuffer())
 
-                        output_type = OutputType.PHOTO
+                        output_type = constants.OutputType.PHOTO
                 except Exception as error:
                     logger.error('pdf2image error: {}'.format(error))
 
-                if output_type == OutputType.NONE:
+                if output_type == constants.OutputType.NONE:
                     try:
-                        image = Image.open(input_bytes)
+                        image = PIL.Image.open(input_bytes)
 
                         with io.BytesIO() as image_bytes:
                             image.save(image_bytes, format='WEBP')
 
                             output_bytes.write(image_bytes.getbuffer())
 
-                            output_type = OutputType.STICKER
+                            output_type = constants.OutputType.STICKER
                     except Exception as error:
                         logger.error('PIL error: {}'.format(error))
 
-        if output_type == OutputType.NONE:
-            if chat_type == Chat.PRIVATE:
+        if output_type == constants.OutputType.NONE:
+            if chat_type == telegram.Chat.PRIVATE:
                 if invalid_format is None:
                     invalid_format = os.path.splitext(input_file_url)[1][1:]
 
@@ -305,13 +292,13 @@ def message_file_handler(update: Update, context: CallbackContext):
         output_file_size = output_bytes.getbuffer().nbytes
 
         if caption is None and input_file_name is not None:
-            caption = input_file_name[:MAX_CAPTION_LENGTH]
+            caption = input_file_name[:telegram.constants.MAX_CAPTION_LENGTH]
 
-        if output_type == OutputType.AUDIO:
-            if not ensure_size_under_limit(output_file_size, MAX_FILESIZE_UPLOAD, update, context, file_reference_text='Converted file'):
+        if output_type == constants.OutputType.AUDIO:
+            if not utils.ensure_size_under_limit(output_file_size, telegram.constants.MAX_FILESIZE_UPLOAD, update, context, file_reference_text='Converted file'):
                 return
 
-            bot.send_chat_action(chat_id, ChatAction.UPLOAD_AUDIO)
+            bot.send_chat_action(chat_id, telegram.ChatAction.UPLOAD_AUDIO)
 
             bot.send_voice(
                 chat_id,
@@ -321,17 +308,17 @@ def message_file_handler(update: Update, context: CallbackContext):
             )
 
             return
-        elif output_type == OutputType.VIDEO:
-            if not ensure_size_under_limit(output_file_size, MAX_FILESIZE_UPLOAD, update, context, file_reference_text='Converted file'):
+        elif output_type == constants.OutputType.VIDEO:
+            if not utils.ensure_size_under_limit(output_file_size, telegram.constants.MAX_FILESIZE_UPLOAD, update, context, file_reference_text='Converted file'):
                 return
 
-            bot.send_chat_action(chat_id, ChatAction.UPLOAD_VIDEO)
+            bot.send_chat_action(chat_id, telegram.ChatAction.UPLOAD_VIDEO)
 
-            send_video(bot, chat_id, message_id, output_bytes, caption, chat_type)
+            utils.send_video(bot, chat_id, message_id, output_bytes, caption, chat_type)
 
             return
-        elif output_type == OutputType.PHOTO:
-            if not ensure_size_under_limit(output_file_size, MAX_PHOTO_FILESIZE_UPLOAD, update, context, file_reference_text='Converted file'):
+        elif output_type == constants.OutputType.PHOTO:
+            if not utils.ensure_size_under_limit(output_file_size, constants.MAX_PHOTO_FILESIZE_UPLOAD, update, context, file_reference_text='Converted file'):
                 return
 
             bot.send_photo(
@@ -342,7 +329,7 @@ def message_file_handler(update: Update, context: CallbackContext):
             )
 
             return
-        elif output_type == OutputType.STICKER:
+        elif output_type == constants.OutputType.STICKER:
             bot.send_sticker(
                 chat_id,
                 output_bytes,
@@ -350,11 +337,11 @@ def message_file_handler(update: Update, context: CallbackContext):
             )
 
             return
-        elif output_type == OutputType.FILE:
-            if not ensure_size_under_limit(output_file_size, MAX_FILESIZE_UPLOAD, update, context, file_reference_text='Converted file'):
+        elif output_type == constants.OutputType.FILE:
+            if not utils.ensure_size_under_limit(output_file_size, telegram.constants.MAX_FILESIZE_UPLOAD, update, context, file_reference_text='Converted file'):
                 return
 
-            bot.send_chat_action(chat_id, ChatAction.UPLOAD_DOCUMENT)
+            bot.send_chat_action(chat_id, telegram.ChatAction.UPLOAD_DOCUMENT)
 
             bot.send_document(
                 chat_id,
@@ -364,7 +351,7 @@ def message_file_handler(update: Update, context: CallbackContext):
 
             return
 
-    if chat_type == Chat.PRIVATE:
+    if chat_type == telegram.Chat.PRIVATE:
         bot.send_message(
             chat_id,
             'File type is not yet supported.',
@@ -372,22 +359,22 @@ def message_file_handler(update: Update, context: CallbackContext):
         )
 
 
-def message_video_handler(update: Update, context: CallbackContext):
+def message_video_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
     message = update.effective_message
     chat_type = update.effective_chat.type
     bot = context.bot
 
-    if chat_type != Chat.PRIVATE:
+    if chat_type != telegram.Chat.PRIVATE:
         return
 
-    if cli_args.debug and not check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
+    if cli_args.debug and not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     message_id = message.message_id
     chat_id = message.chat.id
     attachment = message.video
 
-    if not ensure_size_under_limit(attachment.file_size, MAX_FILESIZE_DOWNLOAD, update, context):
+    if not utils.ensure_size_under_limit(attachment.file_size, telegram.constants.MAX_FILESIZE_DOWNLOAD, update, context):
         return
 
     user = update.effective_user
@@ -396,9 +383,9 @@ def message_video_handler(update: Update, context: CallbackContext):
 
     create_or_update_user(bot, user)
 
-    analytics_handler.track(AnalyticsType.MESSAGE, user)
+    analytics_handler.track(analytics.AnalyticsType.MESSAGE, user)
 
-    bot.send_chat_action(chat_id, ChatAction.TYPING)
+    bot.send_chat_action(chat_id, telegram.ChatAction.TYPING)
 
     input_file = bot.get_file(input_file_id)
     input_file_url = input_file.file_path
@@ -411,7 +398,7 @@ def message_video_handler(update: Update, context: CallbackContext):
         pass
 
     with io.BytesIO() as output_bytes:
-        output_type = OutputType.NONE
+        output_type = constants.OutputType.NONE
 
         invalid_format = None
 
@@ -420,15 +407,15 @@ def message_video_handler(update: Update, context: CallbackContext):
                 codec_name = stream.get('codec_name')
                 codec_type = stream.get('codec_type')
 
-                if codec_name is not None and codec_type == VIDEO_CODED_TYPE:
+                if codec_name is not None and codec_type == constants.VIDEO_CODED_TYPE:
                     invalid_format = codec_name
 
-                if codec_name in VIDEO_CODEC_NAMES:
-                    output_type = OutputType.VIDEO_NOTE
+                if codec_name in constants.VIDEO_CODEC_NAMES:
+                    output_type = constants.OutputType.VIDEO_NOTE
 
-                    mp4_bytes = convert(output_type, input_video_url=input_file_url)
+                    mp4_bytes = utils.convert(output_type, input_video_url=input_file_url)
 
-                    if not ensure_valid_converted_file(
+                    if not utils.ensure_valid_converted_file(
                         file_bytes=mp4_bytes,
                         update=update,
                         context=context
@@ -441,7 +428,7 @@ def message_video_handler(update: Update, context: CallbackContext):
                 else:
                     continue
 
-        if output_type == OutputType.NONE:
+        if output_type == constants.OutputType.NONE:
             if invalid_format is None:
                 invalid_format = os.path.splitext(input_file_url)[1][1:]
 
@@ -455,13 +442,13 @@ def message_video_handler(update: Update, context: CallbackContext):
 
         output_file_size = output_bytes.getbuffer().nbytes
 
-        if output_type == OutputType.VIDEO_NOTE:
-            if not ensure_size_under_limit(output_file_size, MAX_FILESIZE_UPLOAD, update, context, file_reference_text='Converted file'):
+        if output_type == constants.OutputType.VIDEO_NOTE:
+            if not utils.ensure_size_under_limit(output_file_size, telegram.constants.MAX_FILESIZE_UPLOAD, update, context, file_reference_text='Converted file'):
                 return
 
-            bot.send_chat_action(chat_id, ChatAction.UPLOAD_VIDEO)
+            bot.send_chat_action(chat_id, telegram.ChatAction.UPLOAD_VIDEO)
 
-            send_video_note(bot, chat_id, message_id, output_bytes)
+            utils.send_video_note(bot, chat_id, message_id, output_bytes)
 
             return
 
@@ -472,12 +459,12 @@ def message_video_handler(update: Update, context: CallbackContext):
     )
 
 
-def message_text_handler(update: Update, context: CallbackContext):
+def message_text_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
     message = update.effective_message
     chat_type = update.effective_chat.type
     bot = context.bot
 
-    if cli_args.debug and not check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
+    if cli_args.debug and not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     message_id = message.message_id
@@ -487,9 +474,9 @@ def message_text_handler(update: Update, context: CallbackContext):
 
     create_or_update_user(bot, user)
 
-    analytics_handler.track(AnalyticsType.MESSAGE, user)
+    analytics_handler.track(analytics.AnalyticsType.MESSAGE, user)
 
-    entity, text = next(((entity, text) for entity, text in entities.items() if entity.type in [MessageEntity.URL, MessageEntity.TEXT_LINK]), None)
+    entity, text = next(((entity, text) for entity, text in entities.items() if entity.type in [telegram.MessageEntity.URL, telegram.MessageEntity.TEXT_LINK]), None)
 
     if entity is None:
         return
@@ -537,21 +524,21 @@ def message_text_handler(update: Update, context: CallbackContext):
                 video_url = video_data['url']
 
                 if file_size is None:
-                    file_size = get_file_size(video_url)
+                    file_size = utils.get_file_size(video_url)
 
                 audio_url = audio_data['url']
             elif 'url' in video:
                 video_url = video['url']
-                file_size = get_file_size(video_url)
+                file_size = utils.get_file_size(video_url)
 
             if file_size is not None:
-                if not ensure_size_under_limit(file_size, MAX_FILESIZE_UPLOAD, update, context):
+                if not utils.ensure_size_under_limit(file_size, telegram.constants.MAX_FILESIZE_UPLOAD, update, context):
                     return
 
         except Exception as error:
             logger.error('youtube-dl error: {}'.format(error))
 
-        if chat_type == Chat.PRIVATE and (caption is None or video_url is None):
+        if chat_type == telegram.Chat.PRIVATE and (caption is None or video_url is None):
             bot.send_message(
                 chat_id,
                 'No video found on this link.',
@@ -561,9 +548,9 @@ def message_text_handler(update: Update, context: CallbackContext):
 
             return
 
-        mp4_bytes = convert(OutputType.VIDEO, input_video_url=video_url, input_audio_url=audio_url)
+        mp4_bytes = utils.convert(constants.OutputType.VIDEO, input_video_url=video_url, input_audio_url=audio_url)
 
-        if not ensure_valid_converted_file(
+        if not utils.ensure_valid_converted_file(
             file_bytes=mp4_bytes,
             update=update,
             context=context
@@ -573,12 +560,12 @@ def message_text_handler(update: Update, context: CallbackContext):
         output_bytes.write(mp4_bytes)
         output_bytes.seek(0)
 
-        caption = caption[:MAX_CAPTION_LENGTH]
+        caption = caption[:telegram.constants.MAX_CAPTION_LENGTH]
 
-        send_video(bot, chat_id, message_id, output_bytes, caption, chat_type)
+        utils.send_video(bot, chat_id, message_id, output_bytes, caption, chat_type)
 
 
-def message_answer_handler(update: Update, context: CallbackContext):
+def message_answer_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
     callback_query = update.callback_query
     callback_data = json.loads(callback_query.data)
 
@@ -593,7 +580,7 @@ def message_answer_handler(update: Update, context: CallbackContext):
 
     attachment = message.effective_attachment
 
-    if not ensure_size_under_limit(attachment.file_size, MAX_FILESIZE_DOWNLOAD, update, context):
+    if not utils.ensure_size_under_limit(attachment.file_size, telegram.constants.MAX_FILESIZE_DOWNLOAD, update, context):
         return
 
     attachment_file_id = attachment.file_id
@@ -605,10 +592,10 @@ def message_answer_handler(update: Update, context: CallbackContext):
 
     create_or_update_user(bot, user)
 
-    analytics_handler.track(AnalyticsType.MESSAGE, user)
+    analytics_handler.track(analytics.AnalyticsType.MESSAGE, user)
 
-    if chat_type == Chat.PRIVATE:
-        bot.send_chat_action(chat_id, ChatAction.TYPING)
+    if chat_type == telegram.Chat.PRIVATE:
+        bot.send_chat_action(chat_id, telegram.ChatAction.TYPING)
 
     input_file = bot.get_file(attachment_file_id)
     input_file_url = input_file.file_path
@@ -621,7 +608,7 @@ def message_answer_handler(update: Update, context: CallbackContext):
         pass
 
     with io.BytesIO() as output_bytes:
-        output_type = OutputType.NONE
+        output_type = constants.OutputType.NONE
 
         invalid_format = None
 
@@ -630,15 +617,15 @@ def message_answer_handler(update: Update, context: CallbackContext):
                 codec_name = stream.get('codec_name')
                 codec_type = stream.get('codec_type')
 
-                if codec_name is not None and codec_type == VIDEO_CODED_TYPE:
+                if codec_name is not None and codec_type == constants.VIDEO_CODED_TYPE:
                     invalid_format = codec_name
 
-                if codec_name in VIDEO_CODEC_NAMES:
-                    output_type = OutputType.VIDEO_NOTE
+                if codec_name in constants.VIDEO_CODEC_NAMES:
+                    output_type = constants.OutputType.VIDEO_NOTE
 
-                    mp4_bytes = convert(output_type, input_video_url=input_file_url)
+                    mp4_bytes = utils.convert(output_type, input_video_url=input_file_url)
 
-                    if not ensure_valid_converted_file(
+                    if not utils.ensure_valid_converted_file(
                         file_bytes=mp4_bytes,
                         update=update,
                         context=context
@@ -653,8 +640,8 @@ def message_answer_handler(update: Update, context: CallbackContext):
                 else:
                     continue
 
-        if output_type == OutputType.NONE:
-            if chat_type == Chat.PRIVATE:
+        if output_type == constants.OutputType.NONE:
+            if chat_type == telegram.Chat.PRIVATE:
                 if invalid_format is None:
                     invalid_format = os.path.splitext(input_file_url)[1][1:]
 
@@ -672,21 +659,21 @@ def message_answer_handler(update: Update, context: CallbackContext):
 
         output_file_size = output_bytes.getbuffer().nbytes
 
-        if output_type == OutputType.VIDEO_NOTE:
-            if not ensure_size_under_limit(output_file_size, MAX_FILESIZE_UPLOAD, update, context, file_reference_text='Converted file'):
+        if output_type == constants.OutputType.VIDEO_NOTE:
+            if not utils.ensure_size_under_limit(output_file_size, telegram.constants.MAX_FILESIZE_UPLOAD, update, context, file_reference_text='Converted file'):
                 callback_query.answer()
 
                 return
 
-            bot.send_chat_action(chat_id, ChatAction.UPLOAD_VIDEO)
+            bot.send_chat_action(chat_id, telegram.ChatAction.UPLOAD_VIDEO)
 
-            send_video_note(bot, chat_id, message_id, output_bytes)
+            utils.send_video_note(bot, chat_id, message_id, output_bytes)
 
             callback_query.answer()
 
             return
 
-    if chat_type == Chat.PRIVATE:
+    if chat_type == telegram.Chat.PRIVATE:
         bot.send_message(
             chat_id,
             'File type is not yet supported.',
@@ -696,47 +683,47 @@ def message_answer_handler(update: Update, context: CallbackContext):
     callback_query.answer()
 
 
-def error_handler(update: Update, context: CallbackContext):
+def error_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
     logger.error('Update "{}" caused error "{}"'.format(json.dumps(update.to_dict(), indent=4), context.error))
 
 
 def main():
     message_file_filters = (
         (
-            Filters.audio |
-            Filters.document |
-            Filters.photo
+            telegram.ext.Filters.audio |
+            telegram.ext.Filters.document |
+            telegram.ext.Filters.photo
         ) & (
-            ~ Filters.animation
+            ~ telegram.ext.Filters.animation
         )
     ) | (
-        Filters.private & (
-            Filters.voice |
-            Filters.sticker
+        telegram.ext.Filters.private & (
+            telegram.ext.Filters.voice |
+            telegram.ext.Filters.sticker
         )
     )
 
     message_text_filters = (
-        Filters.private & (
-            Filters.text & (
-                Filters.entity(MessageEntity.URL) |
-                Filters.entity(MessageEntity.TEXT_LINK)
+        telegram.ext.Filters.private & (
+            telegram.ext.Filters.text & (
+                telegram.ext.Filters.entity(telegram.MessageEntity.URL) |
+                telegram.ext.Filters.entity(telegram.MessageEntity.TEXT_LINK)
             )
         )
     )
 
     dispatcher = updater.dispatcher
 
-    dispatcher.add_handler(CommandHandler('start', start_command_handler))
+    dispatcher.add_handler(telegram.ext.CommandHandler('start', start_command_handler))
 
-    dispatcher.add_handler(CommandHandler('restart', restart_command_handler))
-    dispatcher.add_handler(CommandHandler('logs', logs_command_handler))
-    dispatcher.add_handler(CommandHandler('users', users_command_handler, pass_args=True))
+    dispatcher.add_handler(telegram.ext.CommandHandler('restart', restart_command_handler))
+    dispatcher.add_handler(telegram.ext.CommandHandler('logs', logs_command_handler))
+    dispatcher.add_handler(telegram.ext.CommandHandler('users', users_command_handler, pass_args=True))
 
-    dispatcher.add_handler(MessageHandler(message_file_filters, message_file_handler))
-    dispatcher.add_handler(MessageHandler(Filters.video, message_video_handler))
-    dispatcher.add_handler(MessageHandler(message_text_filters, message_text_handler))
-    dispatcher.add_handler(CallbackQueryHandler(message_answer_handler))
+    dispatcher.add_handler(telegram.ext.MessageHandler(message_file_filters, message_file_handler))
+    dispatcher.add_handler(telegram.ext.MessageHandler(telegram.ext.Filters.video, message_video_handler))
+    dispatcher.add_handler(telegram.ext.MessageHandler(message_text_filters, message_text_handler))
+    dispatcher.add_handler(telegram.ext.CallbackQueryHandler(message_answer_handler))
 
     dispatcher.add_error_handler(error_handler)
 
@@ -818,8 +805,8 @@ if __name__ == '__main__':
 
         sys.exit(2)
 
-    updater = Updater(BOT_TOKEN, use_context=True)
-    analytics_handler = AnalyticsHandler()
+    updater = telegram.ext.Updater(BOT_TOKEN, use_context=True)
+    analytics_handler = analytics.AnalyticsHandler()
 
     try:
         ADMIN_USER_ID = config.getint('Telegram', 'Admin')

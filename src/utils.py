@@ -4,24 +4,17 @@ import json
 import logging
 
 import ffmpeg
-from telegram import (
-    Chat, Update,
-    InlineKeyboardButton, InlineKeyboardMarkup
-)
-from telegram.ext import CallbackContext
+import telegram
+import telegram.ext
 
-from analytics import AnalyticsType
-from constants import (
-    MAX_VIDEO_NOTE_LENGTH,
-    VIDEO_NOTE_CROP_OFFSET_PARAMS, VIDEO_NOTE_CROP_SIZE_PARAMS,
-    OutputType
-)
+import analytics
+import constants
 
 logger = logging.getLogger(__name__)
 
 
 def check_admin(bot, message, analytics_handler, admin_user_id):
-    analytics_handler.track(AnalyticsType.COMMAND, message.from_user, message.text)
+    analytics_handler.track(analytics.AnalyticsType.COMMAND, message.from_user, message.text)
 
     if not admin_user_id or message.from_user.id != admin_user_id:
         bot.send_message(message.chat_id, 'You are not allowed to use this command')
@@ -31,13 +24,13 @@ def check_admin(bot, message, analytics_handler, admin_user_id):
     return True
 
 
-def ensure_size_under_limit(size, limit, update: Update, context: CallbackContext, file_reference_text='File'):
+def ensure_size_under_limit(size, limit, update: telegram.Update, context: telegram.ext.CallbackContext, file_reference_text='File'):
     if size <= limit:
         return True
 
     chat_type = update.effective_chat.type
 
-    if chat_type == Chat.PRIVATE:
+    if chat_type == telegram.Chat.PRIVATE:
         message = update.effective_message
         chat = update.effective_chat
 
@@ -57,13 +50,13 @@ def ensure_size_under_limit(size, limit, update: Update, context: CallbackContex
     return False
 
 
-def ensure_valid_converted_file(file_bytes, update: Update, context: CallbackContext):
+def ensure_valid_converted_file(file_bytes, update: telegram.Update, context: telegram.ext.CallbackContext):
     if file_bytes is not None:
         return True
 
     chat_type = update.effective_chat.type
 
-    if chat_type == Chat.PRIVATE:
+    if chat_type == telegram.Chat.PRIVATE:
         message = update.effective_message
         chat = update.effective_chat
 
@@ -80,11 +73,11 @@ def ensure_valid_converted_file(file_bytes, update: Update, context: CallbackCon
 
 
 def send_video(bot, chat_id, message_id, output_bytes, caption, chat_type):
-    if chat_type == Chat.PRIVATE:
+    if chat_type == telegram.Chat.PRIVATE:
         data = {}
 
-        button = InlineKeyboardButton('Rounded', callback_data=json.dumps(data))
-        reply_markup = InlineKeyboardMarkup([[button]])
+        button = telegram.InlineKeyboardButton('Rounded', callback_data=json.dumps(data))
+        reply_markup = telegram.InlineKeyboardMarkup([[button]])
     else:
         reply_markup = None
 
@@ -122,14 +115,14 @@ def has_audio_stream(video_url):
 
 def convert(output_type, input_video_url=None, input_audio_url=None):
     try:
-        if output_type == OutputType.AUDIO:
+        if output_type == constants.OutputType.AUDIO:
             return (
                 ffmpeg
                     .input(input_audio_url)
                     .output('pipe:', format='opus', strict='-2')
                     .run(capture_stdout=True)
             )[0]
-        elif output_type == OutputType.VIDEO:
+        elif output_type == constants.OutputType.VIDEO:
             if input_audio_url is None:
                 return (
                     ffmpeg
@@ -146,21 +139,21 @@ def convert(output_type, input_video_url=None, input_audio_url=None):
                         .output(input_video, input_audio, 'pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
                         .run(capture_stdout=True)
                 )[0]
-        elif output_type == OutputType.VIDEO_NOTE:
+        elif output_type == constants.OutputType.VIDEO_NOTE:
             # Copied from https://github.com/kkroening/ffmpeg-python/issues/184#issuecomment-504390452.
 
             ffmpeg_input = (
                 ffmpeg
-                    .input(input_video_url, t=MAX_VIDEO_NOTE_LENGTH)
+                    .input(input_video_url, t=constants.MAX_VIDEO_NOTE_LENGTH)
             )
             ffmpeg_input_video = (
                 ffmpeg_input
                     .video
                     .crop(
-                        VIDEO_NOTE_CROP_OFFSET_PARAMS,
-                        VIDEO_NOTE_CROP_OFFSET_PARAMS,
-                        VIDEO_NOTE_CROP_SIZE_PARAMS,
-                        VIDEO_NOTE_CROP_SIZE_PARAMS
+                        constants.VIDEO_NOTE_CROP_OFFSET_PARAMS,
+                        constants.VIDEO_NOTE_CROP_OFFSET_PARAMS,
+                        constants.VIDEO_NOTE_CROP_SIZE_PARAMS,
+                        constants.VIDEO_NOTE_CROP_SIZE_PARAMS
                     )
             )
 
@@ -175,7 +168,7 @@ def convert(output_type, input_video_url=None, input_audio_url=None):
                 ffmpeg_output = ffmpeg.output(ffmpeg_joined[0], 'pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
 
             return ffmpeg_output.run(capture_stdout=True)[0]
-        elif output_type == OutputType.FILE:
+        elif output_type == constants.OutputType.FILE:
             return (
                 ffmpeg
                     .input(input_audio_url)

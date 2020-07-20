@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime
+import datetime
 
 GOOGLE_HEADERS = {'User-Agent': 'FileConvertBot'}
 
@@ -12,7 +12,7 @@ LOGS_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 GENERIC_DATE_FORMAT = '%Y-%m-%d'
 GENERIC_DATE_TIME_FORMAT = '{} %H:%M:%S'.format(GENERIC_DATE_FORMAT)
 
-EPOCH_DATE = datetime(1970, 1, 1)
+EPOCH_DATE = datetime.datetime(1970, 1, 1)
 
 MAX_PHOTO_FILESIZE_UPLOAD = int(10E6)  # (50 MB)
 MAX_VIDEO_NOTE_LENGTH = 60
