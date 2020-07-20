@@ -517,8 +517,14 @@ def message_text_handler(update: Update, context: CallbackContext):
                 video_data = list(filter(lambda format: format['vcodec'] != 'none', requested_formats))[0]
                 audio_data = list(filter(lambda format: format['acodec'] != 'none', requested_formats))[0]
 
-                if not ensure_size_under_limit(video_data['filesize'], MAX_FILESIZE_UPLOAD, update, context):
-                    return
+                file_size = None
+
+                if 'filesize' in video_data:
+                    file_size = video_data['filesize']
+
+                if file_size is not None:
+                    if not ensure_size_under_limit(file_size, MAX_FILESIZE_UPLOAD, update, context):
+                        return
 
                 video_url = video_data['url']
                 audio_url = audio_data['url']
@@ -531,7 +537,7 @@ def message_text_handler(update: Update, context: CallbackContext):
         if chat_type == Chat.PRIVATE and (caption is None or video_url is None):
             bot.send_message(
                 chat_id,
-                'No video found on "{}".'.format(input_link),
+                'No video found on this link.',
                 disable_web_page_preview=True,
                 reply_to_message_id=message_id
             )
