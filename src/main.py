@@ -45,7 +45,7 @@ import youtube_dl
 
 from analytics import Analytics, AnalyticsType
 from constants import (
-    MAX_PHOTO_FILESIZE_UPLOAD, VIDEO_CODEC_NAMES, VIDEO_CODED_TYPE, ATTACHMENT_FILE_ID_KEY,
+    MAX_PHOTO_FILESIZE_UPLOAD, VIDEO_CODEC_NAMES, VIDEO_CODED_TYPE,
     OutputType
 )
 from database import User
@@ -559,16 +559,17 @@ def message_answer_handler(update: Update, context: CallbackContext):
     callback_query = update.callback_query
     callback_data = json.loads(callback_query.data)
 
-    if not callback_data:
+    if callback_data is None:
         callback_query.answer()
 
         return
 
-    original_attachment_file_id = callback_data[ATTACHMENT_FILE_ID_KEY]
-
     message = update.effective_message
     chat_type = update.effective_chat.type
     bot = context.bot
+
+    attachment = message.effective_attachment
+    attachment_file_id = attachment.file_id
 
     message_id = message.message_id
     chat_id = message.chat.id
@@ -582,7 +583,7 @@ def message_answer_handler(update: Update, context: CallbackContext):
     if chat_type == Chat.PRIVATE:
         bot.send_chat_action(chat_id, ChatAction.TYPING)
 
-    input_file = bot.get_file(original_attachment_file_id)
+    input_file = bot.get_file(attachment_file_id)
     input_file_url = input_file.file_path
 
     probe = None

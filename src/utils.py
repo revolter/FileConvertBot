@@ -15,7 +15,6 @@ from analytics import AnalyticsType
 from constants import (
     MAX_VIDEO_NOTE_LENGTH,
     VIDEO_NOTE_CROP_OFFSET_PARAMS, VIDEO_NOTE_CROP_SIZE_PARAMS,
-    ATTACHMENT_FILE_ID_KEY,
     OutputType
 )
 
@@ -60,9 +59,7 @@ def ensure_size_under_limit(size, limit, update: Update, context: CallbackContex
 
 def send_video(bot, chat_id, message_id, output_bytes, attachment, caption, chat_type):
     if chat_type == Chat.PRIVATE and attachment is not None:
-        data = {
-            ATTACHMENT_FILE_ID_KEY: attachment.file_id
-        }
+        data = {}
 
         button = InlineKeyboardButton('Rounded', callback_data=json.dumps(data))
         reply_markup = InlineKeyboardMarkup([[button]])
