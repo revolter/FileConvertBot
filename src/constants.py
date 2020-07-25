@@ -22,8 +22,6 @@ VIDEO_CODED_TYPE = 'video'
 VIDEO_NOTE_CROP_OFFSET_PARAMS = 'abs(in_w-in_h)'
 VIDEO_NOTE_CROP_SIZE_PARAMS = 'min(in_w,in_h)'
 
-ATTACHMENT_FILE_ID_KEY = 'i'
-
 
 class OutputType:
     NONE = 'none'
