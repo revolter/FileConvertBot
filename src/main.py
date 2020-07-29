@@ -23,7 +23,7 @@ from telegram.ext import (
 )
 from telegram.utils.helpers import effective_message_type
 
-from analytics import Analytics, AnalyticsType
+from analytics import AnalyticsHandler, AnalyticsType
 from constants import (
     MAX_PHOTO_FILESIZE_UPLOAD, VIDEO_CODEC_NAMES, VIDEO_CODED_TYPE,
     OutputType
@@ -46,7 +46,7 @@ BOT_TOKEN = None
 ADMIN_USER_ID = None
 
 updater: Updater
-analytics: Analytics
+analytics_handler: AnalyticsHandler
 
 
 def stop_and_restart():
@@ -70,7 +70,7 @@ def start_command_handler(update: Update, context: CallbackContext):
 
     create_or_update_user(bot, user)
 
-    analytics.track(AnalyticsType.COMMAND, user, '/start')
+    analytics_handler.track(AnalyticsType.COMMAND, user, '/start')
 
     bot.send_message(chat_id, 'Send me a file to try to convert it to something better.')
 
@@ -79,7 +79,7 @@ def restart_command_handler(update: Update, context: CallbackContext):
     message = update.message
     bot = context.bot
 
-    if not check_admin(bot, message, analytics, ADMIN_USER_ID):
+    if not check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     bot.send_message(message.chat_id, 'Restarting...')
@@ -93,7 +93,7 @@ def logs_command_handler(update: Update, context: CallbackContext):
 
     chat_id = message.chat_id
 
-    if not check_admin(bot, message, analytics, ADMIN_USER_ID):
+    if not check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     try:
@@ -108,7 +108,7 @@ def users_command_handler(update: Update, context: CallbackContext):
 
     chat_id = message.chat_id
 
-    if not check_admin(bot, message, analytics, ADMIN_USER_ID):
+    if not check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     bot.send_message(chat_id, User.get_users_table('updated' in context.args), parse_mode=ParseMode.MARKDOWN)
@@ -119,7 +119,7 @@ def message_file_handler(update: Update, context: CallbackContext):
     chat_type = update.effective_chat.type
     bot = context.bot
 
-    if cli_args.debug and not check_admin(bot, message, analytics, ADMIN_USER_ID):
+    if cli_args.debug and not check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     message_id = message.message_id
@@ -153,7 +153,7 @@ def message_file_handler(update: Update, context: CallbackContext):
 
     create_or_update_user(bot, user)
 
-    analytics.track(AnalyticsType.MESSAGE, user)
+    analytics_handler.track(AnalyticsType.MESSAGE, user)
 
     if chat_type == Chat.PRIVATE:
         bot.send_chat_action(chat_id, ChatAction.TYPING)
@@ -380,7 +380,7 @@ def message_video_handler(update: Update, context: CallbackContext):
     if chat_type != Chat.PRIVATE:
         return
 
-    if cli_args.debug and not check_admin(bot, message, analytics, ADMIN_USER_ID):
+    if cli_args.debug and not check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     message_id = message.message_id
@@ -396,7 +396,7 @@ def message_video_handler(update: Update, context: CallbackContext):
 
     create_or_update_user(bot, user)
 
-    analytics.track(AnalyticsType.MESSAGE, user)
+    analytics_handler.track(AnalyticsType.MESSAGE, user)
 
     bot.send_chat_action(chat_id, ChatAction.TYPING)
 
@@ -477,7 +477,7 @@ def message_text_handler(update: Update, context: CallbackContext):
     chat_type = update.effective_chat.type
     bot = context.bot
 
-    if cli_args.debug and not check_admin(bot, message, analytics, ADMIN_USER_ID):
+    if cli_args.debug and not check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     message_id = message.message_id
@@ -487,7 +487,7 @@ def message_text_handler(update: Update, context: CallbackContext):
 
     create_or_update_user(bot, user)
 
-    analytics.track(AnalyticsType.MESSAGE, user)
+    analytics_handler.track(AnalyticsType.MESSAGE, user)
 
     entity, text = next(((entity, text) for entity, text in entities.items() if entity.type in [MessageEntity.URL, MessageEntity.TEXT_LINK]), None)
 
@@ -605,7 +605,7 @@ def message_answer_handler(update: Update, context: CallbackContext):
 
     create_or_update_user(bot, user)
 
-    analytics.track(AnalyticsType.MESSAGE, user)
+    analytics_handler.track(AnalyticsType.MESSAGE, user)
 
     if chat_type == Chat.PRIVATE:
         bot.send_chat_action(chat_id, ChatAction.TYPING)
@@ -819,13 +819,13 @@ if __name__ == '__main__':
         sys.exit(2)
 
     updater = Updater(BOT_TOKEN, use_context=True)
-    analytics = Analytics()
+    analytics_handler = AnalyticsHandler()
 
     try:
         ADMIN_USER_ID = config.getint('Telegram', 'Admin')
 
         if not cli_args.debug:
-            analytics.googleToken = config.get('Google', 'Key')
+            analytics_handler.googleToken = config.get('Google', 'Key')
     except configparser.Error as config_error:
         logger.warning('Config error: {}'.format(config_error))
 
