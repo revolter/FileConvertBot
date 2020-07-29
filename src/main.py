@@ -574,6 +574,10 @@ def message_answer_handler(update: Update, context: CallbackContext):
     bot = context.bot
 
     attachment = message.effective_attachment
+
+    if not ensure_size_under_limit(attachment.file_size, MAX_FILESIZE_DOWNLOAD, update, context):
+        return
+
     attachment_file_id = attachment.file_id
 
     message_id = message.message_id

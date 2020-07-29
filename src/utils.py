@@ -39,10 +39,11 @@ def ensure_size_under_limit(size, limit, update: Update, context: CallbackContex
     chat_type = update.effective_chat.type
 
     if chat_type == Chat.PRIVATE:
-        message = update.message
+        message = update.effective_message
+        chat = update.effective_chat
 
         message_id = message.message_id
-        chat_id = message.chat.id
+        chat_id = chat.id
 
         context.bot.send_message(
             chat_id,
