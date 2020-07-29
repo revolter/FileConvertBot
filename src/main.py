@@ -511,13 +511,13 @@ def message_text_handler(update: Update, context: CallbackContext):
             else:
                 caption = input_link
 
+            file_size = None
+
             if 'requested_formats' in video:
                 requested_formats = video['requested_formats']
 
                 video_data = list(filter(lambda format: format['vcodec'] != 'none', requested_formats))[0]
                 audio_data = list(filter(lambda format: format['acodec'] != 'none', requested_formats))[0]
-
-                file_size = None
 
                 if 'filesize' in video_data:
                     file_size = video_data['filesize']
@@ -527,13 +527,14 @@ def message_text_handler(update: Update, context: CallbackContext):
                 if file_size is None:
                     file_size = get_file_size(video_url)
 
-                if file_size is not None:
-                    if not ensure_size_under_limit(file_size, MAX_FILESIZE_UPLOAD, update, context):
-                        return
-
                 audio_url = audio_data['url']
             elif 'url' in video:
                 video_url = video['url']
+                file_size = get_file_size(video_url)
+
+            if file_size is not None:
+                if not ensure_size_under_limit(file_size, MAX_FILESIZE_UPLOAD, update, context):
+                    return
 
         except Exception as error:
             logger.error('youtube-dl error: {}'.format(error))
