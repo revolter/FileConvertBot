@@ -39,10 +39,11 @@ def ensure_size_under_limit(size, limit, update: Update, context: CallbackContex
     chat_type = update.effective_chat.type
 
     if chat_type == Chat.PRIVATE:
-        message = update.message
+        message = update.effective_message
+        chat = update.effective_chat
 
         message_id = message.message_id
-        chat_id = message.chat.id
+        chat_id = chat.id
 
         context.bot.send_message(
             chat_id,
@@ -82,6 +83,13 @@ def send_video_note(bot, chat_id, message_id, output_bytes):
         output_bytes,
         reply_to_message_id=message_id
     )
+
+
+def get_file_size(video_url):
+    info = ffmpeg.probe(video_url, show_entries='format=size')
+    size = info.get('format', {}).get('size')
+
+    return int(size)
 
 
 def convert(output_type, input_video_url=None, input_audio_url=None):

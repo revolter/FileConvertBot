@@ -52,7 +52,7 @@ from database import User
 from utils import (
     check_admin, ensure_size_under_limit,
     send_video, send_video_note,
-    convert
+    get_file_size, convert
 )
 
 BOT_TOKEN = None
@@ -511,25 +511,30 @@ def message_text_handler(update: Update, context: CallbackContext):
             else:
                 caption = input_link
 
+            file_size = None
+
             if 'requested_formats' in video:
                 requested_formats = video['requested_formats']
 
                 video_data = list(filter(lambda format: format['vcodec'] != 'none', requested_formats))[0]
                 audio_data = list(filter(lambda format: format['acodec'] != 'none', requested_formats))[0]
 
-                file_size = None
-
                 if 'filesize' in video_data:
                     file_size = video_data['filesize']
 
-                if file_size is not None:
-                    if not ensure_size_under_limit(file_size, MAX_FILESIZE_UPLOAD, update, context):
-                        return
-
                 video_url = video_data['url']
+
+                if file_size is None:
+                    file_size = get_file_size(video_url)
+
                 audio_url = audio_data['url']
             elif 'url' in video:
                 video_url = video['url']
+                file_size = get_file_size(video_url)
+
+            if file_size is not None:
+                if not ensure_size_under_limit(file_size, MAX_FILESIZE_UPLOAD, update, context):
+                    return
 
         except Exception as error:
             logger.error('youtube-dl error: {}'.format(error))
@@ -569,6 +574,10 @@ def message_answer_handler(update: Update, context: CallbackContext):
     bot = context.bot
 
     attachment = message.effective_attachment
+
+    if not ensure_size_under_limit(attachment.file_size, MAX_FILESIZE_DOWNLOAD, update, context):
+        return
+
     attachment_file_id = attachment.file_id
 
     message_id = message.message_id
