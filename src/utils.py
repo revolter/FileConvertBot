@@ -84,6 +84,13 @@ def send_video_note(bot, chat_id, message_id, output_bytes):
     )
 
 
+def get_file_size(video_url):
+    info = ffmpeg.probe(video_url, show_entries='format=size')
+    size = info.get('format', {}).get('size')
+
+    return int(size)
+
+
 def convert(output_type, input_video_url=None, input_audio_url=None):
     if output_type == OutputType.AUDIO:
         return (

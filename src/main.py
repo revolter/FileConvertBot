@@ -52,7 +52,7 @@ from database import User
 from utils import (
     check_admin, ensure_size_under_limit,
     send_video, send_video_note,
-    convert
+    get_file_size, convert
 )
 
 BOT_TOKEN = None
@@ -522,11 +522,15 @@ def message_text_handler(update: Update, context: CallbackContext):
                 if 'filesize' in video_data:
                     file_size = video_data['filesize']
 
+                video_url = video_data['url']
+
+                if file_size is None:
+                    file_size = get_file_size(video_url)
+
                 if file_size is not None:
                     if not ensure_size_under_limit(file_size, MAX_FILESIZE_UPLOAD, update, context):
                         return
 
-                video_url = video_data['url']
                 audio_url = audio_data['url']
             elif 'url' in video:
                 video_url = video['url']
