@@ -58,6 +58,28 @@ def ensure_size_under_limit(size, limit, update: Update, context: CallbackContex
     return False
 
 
+def ensure_valid_converted_file(file_bytes, update: Update, context: CallbackContext):
+    if file_bytes is not None:
+        return True
+
+    chat_type = update.effective_chat.type
+
+    if chat_type == Chat.PRIVATE:
+        message = update.effective_message
+        chat = update.effective_chat
+
+        message_id = message.message_id
+        chat_id = chat.id
+
+        context.bot.send_message(
+            chat_id=chat_id,
+            text='File could not be converted.',
+            reply_to_message_id=message_id
+        )
+
+    return False
+
+
 def send_video(bot, chat_id, message_id, output_bytes, attachment, caption, chat_type):
     if chat_type == Chat.PRIVATE and attachment is not None:
         data = {}
@@ -93,59 +115,62 @@ def get_file_size(video_url):
 
 
 def convert(output_type, input_video_url=None, input_audio_url=None):
-    if output_type == OutputType.AUDIO:
-        return (
-            ffmpeg
-            .input(input_audio_url)
-            .output('pipe:', format='opus', strict='-2')
-            .run(capture_stdout=True)
-        )[0]
-    elif output_type == OutputType.VIDEO:
-        if input_audio_url is None:
+    try:
+        if output_type == OutputType.AUDIO:
             return (
                 ffmpeg
-                .input(input_video_url)
-                .output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
+                .input(input_audio_url)
+                .output('pipe:', format='opus', strict='-2')
                 .run(capture_stdout=True)
             )[0]
-        else:
-            input_video = ffmpeg.input(input_video_url)
-            input_audio = ffmpeg.input(input_audio_url)
+        elif output_type == OutputType.VIDEO:
+            if input_audio_url is None:
+                return (
+                    ffmpeg
+                    .input(input_video_url)
+                    .output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
+                    .run(capture_stdout=True)
+                )[0]
+            else:
+                input_video = ffmpeg.input(input_video_url)
+                input_audio = ffmpeg.input(input_audio_url)
 
-            return (
+                return (
+                    ffmpeg
+                    .output(input_video, input_audio, 'pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
+                    .run(capture_stdout=True)
+                )[0]
+        elif output_type == OutputType.VIDEO_NOTE:
+            # Copied from https://github.com/kkroening/ffmpeg-python/issues/184#issuecomment-504390452.
+
+            ffmpeg_input = (
                 ffmpeg
-                .output(input_video, input_audio, 'pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
-                .run(capture_stdout=True)
-            )[0]
-    elif output_type == OutputType.VIDEO_NOTE:
-        # Copied from https://github.com/kkroening/ffmpeg-python/issues/184#issuecomment-504390452.
-
-        ffmpeg_input = (
-            ffmpeg
-            .input(input_video_url, t=MAX_VIDEO_NOTE_LENGTH)
-        )
-        ffmpeg_input_video = (
-            ffmpeg_input
-            .video
-            .crop(
-                VIDEO_NOTE_CROP_OFFSET_PARAMS,
-                VIDEO_NOTE_CROP_OFFSET_PARAMS,
-                VIDEO_NOTE_CROP_SIZE_PARAMS,
-                VIDEO_NOTE_CROP_SIZE_PARAMS
+                .input(input_video_url, t=MAX_VIDEO_NOTE_LENGTH)
             )
-        )
-        ffmpeg_input_audio = ffmpeg_input.audio
-        ffmpeg_joined = ffmpeg.concat(ffmpeg_input_video, ffmpeg_input_audio, v=1, a=1).node
-        ffmpeg_output = ffmpeg.output(ffmpeg_joined[0], ffmpeg_joined[1], 'pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
+            ffmpeg_input_video = (
+                ffmpeg_input
+                .video
+                .crop(
+                    VIDEO_NOTE_CROP_OFFSET_PARAMS,
+                    VIDEO_NOTE_CROP_OFFSET_PARAMS,
+                    VIDEO_NOTE_CROP_SIZE_PARAMS,
+                    VIDEO_NOTE_CROP_SIZE_PARAMS
+                )
+            )
+            ffmpeg_input_audio = ffmpeg_input.audio
+            ffmpeg_joined = ffmpeg.concat(ffmpeg_input_video, ffmpeg_input_audio, v=1, a=1).node
+            ffmpeg_output = ffmpeg.output(ffmpeg_joined[0], ffmpeg_joined[1], 'pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
 
-        return ffmpeg_output.run(capture_stdout=True)[0]
-    elif output_type == OutputType.FILE:
-        return (
-            ffmpeg
-            .input(input_audio_url)
-            .output('pipe:', format='mp3', strict='-2')
-            .run(capture_stdout=True)
-        )[0]
+            return ffmpeg_output.run(capture_stdout=True)[0]
+        elif output_type == OutputType.FILE:
+            return (
+                ffmpeg
+                .input(input_audio_url)
+                .output('pipe:', format='mp3', strict='-2')
+                .run(capture_stdout=True)
+            )[0]
+    except ffmpeg.Error:
+        return None
 
 
 def get_size_string_from_bytes(bytes, suffix='B'):
