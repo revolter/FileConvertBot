@@ -80,8 +80,8 @@ def ensure_valid_converted_file(file_bytes, update: Update, context: CallbackCon
     return False
 
 
-def send_video(bot, chat_id, message_id, output_bytes, attachment, caption, chat_type):
-    if chat_type == Chat.PRIVATE and attachment is not None:
+def send_video(bot, chat_id, message_id, output_bytes, caption, chat_type):
+    if chat_type == Chat.PRIVATE:
         data = {}
 
         button = InlineKeyboardButton('Rounded', callback_data=json.dumps(data))
@@ -112,6 +112,13 @@ def get_file_size(video_url):
     size = info.get('format', {}).get('size')
 
     return int(size)
+
+
+def has_audio_stream(video_url):
+    info = ffmpeg.probe(video_url, select_streams='a', show_entries='format=:streams=index')
+    streams = info.get('streams', [])
+
+    return len(streams) > 0
 
 
 def convert(output_type, input_video_url=None, input_audio_url=None):
@@ -157,9 +164,16 @@ def convert(output_type, input_video_url=None, input_audio_url=None):
                     VIDEO_NOTE_CROP_SIZE_PARAMS
                 )
             )
-            ffmpeg_input_audio = ffmpeg_input.audio
-            ffmpeg_joined = ffmpeg.concat(ffmpeg_input_video, ffmpeg_input_audio, v=1, a=1).node
-            ffmpeg_output = ffmpeg.output(ffmpeg_joined[0], ffmpeg_joined[1], 'pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
+
+            ffmpeg_output: ffmpeg.nodes.OutputStream
+
+            if has_audio_stream(input_video_url):
+                ffmpeg_input_audio = ffmpeg_input.audio
+                ffmpeg_joined = ffmpeg.concat(ffmpeg_input_video, ffmpeg_input_audio, v=1, a=1).node
+                ffmpeg_output = ffmpeg.output(ffmpeg_joined[0], ffmpeg_joined[1], 'pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
+            else:
+                ffmpeg_joined = ffmpeg.concat(ffmpeg_input_video, v=1).node
+                ffmpeg_output = ffmpeg.output(ffmpeg_joined[0], 'pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
 
             return ffmpeg_output.run(capture_stdout=True)[0]
         elif output_type == OutputType.FILE:

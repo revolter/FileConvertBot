@@ -344,7 +344,7 @@ def message_file_handler(update: Update, context: CallbackContext):
 
             bot.send_chat_action(chat_id, ChatAction.UPLOAD_VIDEO)
 
-            send_video(bot, chat_id, message_id, output_bytes, attachment, caption, chat_type)
+            send_video(bot, chat_id, message_id, output_bytes, caption, chat_type)
 
             return
         elif output_type == OutputType.PHOTO:
@@ -592,8 +592,7 @@ def message_text_handler(update: Update, context: CallbackContext):
 
         caption = caption[:MAX_CAPTION_LENGTH]
 
-        # Video note isn't supported for videos downloaded from URLs yet.
-        send_video(bot, chat_id, message_id, output_bytes, None, caption, chat_type)
+        send_video(bot, chat_id, message_id, output_bytes, caption, chat_type)
 
 
 def message_answer_handler(update: Update, context: CallbackContext):
