@@ -2,6 +2,9 @@ GENERIC_DATE_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 
 def migrate(migrator, database, fake=False, **kwargs):
+    if fake is True:
+        return
+
     User = migrator.orm['user']
 
     for user in User.select():
