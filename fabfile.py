@@ -17,13 +17,13 @@ try:
     env.user = config.get('Fabric', 'User')
     env.key_filename = config.get('Fabric', 'KeyFilename')
 
+    env.project_name = config.get('Fabric', 'ProjectName')
     env.project_path = config.get('Fabric', 'ProjectPath')
 except configparser.Error as error:
     print('Config error: {}'.format(error))
 
     sys.exit(1)
 
-env.project_name = 'FileConvertBot'
 env.source_filenames = [
     'main.py',
     'database.py',

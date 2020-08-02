@@ -28,6 +28,7 @@ custom_logger.configure_root_logger()
 
 logger = logging.getLogger(__name__)
 
+BOT_NAME = None
 BOT_TOKEN = None
 
 ADMIN_USER_ID = None
@@ -794,6 +795,7 @@ if __name__ == '__main__':
 
         config.read('config.cfg')
 
+        BOT_NAME = config.get('Telegram', 'Name' if cli_args.server else 'TestName')
         BOT_TOKEN = config.get('Telegram', 'Key' if cli_args.server else 'TestKey')
     except configparser.Error as config_error:
         logger.error('Config error: {}'.format(config_error))
@@ -815,5 +817,7 @@ if __name__ == '__main__':
             analytics_handler.googleToken = config.get('Google', 'Key')
     except configparser.Error as config_error:
         logger.warning('Config error: {}'.format(config_error))
+
+    analytics_handler.userAgent = BOT_NAME
 
     main()

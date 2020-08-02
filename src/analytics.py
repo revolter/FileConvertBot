@@ -19,6 +19,7 @@ class AnalyticsType(enum.Enum):
 class AnalyticsHandler:
     def __init__(self):
         self.googleToken = None
+        self.userAgent = None
 
     def __google_track(self, analytics_type, user, data):
         if not self.googleToken:
@@ -26,7 +27,7 @@ class AnalyticsHandler:
 
         url = constants.GOOGLE_ANALYTICS_BASE_URL.format(self.googleToken, user.id, analytics_type.value, data)
 
-        response = requests.get(url, headers=constants.GOOGLE_HEADERS)
+        response = requests.get(url, headers={'User-Agent': self.userAgent or 'TelegramBot'})
 
         if response.status_code != 200:
             logger.error('Google analytics error: {}'.format(response.status_code))
