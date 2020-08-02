@@ -50,7 +50,8 @@ from constants import (
 )
 from database import User
 from utils import (
-    check_admin, ensure_size_under_limit,
+    check_admin,
+    ensure_size_under_limit, ensure_valid_converted_file,
     send_video, send_video_note,
     get_file_size, convert
 )
@@ -194,6 +195,13 @@ def message_file_handler(update: Update, context: CallbackContext):
 
             mp3_bytes = convert(output_type, input_audio_url=input_file_url)
 
+            if not ensure_valid_converted_file(
+                file_bytes=mp3_bytes,
+                update=update,
+                context=context
+            ):
+                return
+
             output_bytes.write(mp3_bytes)
 
             output_bytes.name = 'voice.mp3'
@@ -232,6 +240,13 @@ def message_file_handler(update: Update, context: CallbackContext):
 
                         opus_bytes = convert(output_type, input_audio_url=input_file_url)
 
+                        if not ensure_valid_converted_file(
+                            file_bytes=opus_bytes,
+                            update=update,
+                            context=context
+                        ):
+                            return
+
                         output_bytes.write(opus_bytes)
 
                         break
@@ -245,6 +260,13 @@ def message_file_handler(update: Update, context: CallbackContext):
                         output_type = OutputType.VIDEO
 
                         mp4_bytes = convert(output_type, input_video_url=input_file_url)
+
+                        if not ensure_valid_converted_file(
+                            file_bytes=mp4_bytes,
+                            update=update,
+                            context=context
+                        ):
+                            return
 
                         output_bytes.write(mp4_bytes)
 
@@ -322,7 +344,7 @@ def message_file_handler(update: Update, context: CallbackContext):
 
             bot.send_chat_action(chat_id, ChatAction.UPLOAD_VIDEO)
 
-            send_video(bot, chat_id, message_id, output_bytes, attachment, caption, chat_type)
+            send_video(bot, chat_id, message_id, output_bytes, caption, chat_type)
 
             return
         elif output_type == OutputType.PHOTO:
@@ -422,6 +444,13 @@ def message_video_handler(update: Update, context: CallbackContext):
                     output_type = OutputType.VIDEO_NOTE
 
                     mp4_bytes = convert(output_type, input_video_url=input_file_url)
+
+                    if not ensure_valid_converted_file(
+                        file_bytes=mp4_bytes,
+                        update=update,
+                        context=context
+                    ):
+                        return
 
                     output_bytes.write(mp4_bytes)
 
@@ -551,13 +580,19 @@ def message_text_handler(update: Update, context: CallbackContext):
 
         mp4_bytes = convert(OutputType.VIDEO, input_video_url=video_url, input_audio_url=audio_url)
 
+        if not ensure_valid_converted_file(
+            file_bytes=mp4_bytes,
+            update=update,
+            context=context
+        ):
+            return
+
         output_bytes.write(mp4_bytes)
         output_bytes.seek(0)
 
         caption = caption[:MAX_CAPTION_LENGTH]
 
-        # Video note isn't supported for videos downloaded from URLs yet.
-        send_video(bot, chat_id, message_id, output_bytes, None, caption, chat_type)
+        send_video(bot, chat_id, message_id, output_bytes, caption, chat_type)
 
 
 def message_answer_handler(update: Update, context: CallbackContext):
@@ -619,6 +654,15 @@ def message_answer_handler(update: Update, context: CallbackContext):
                     output_type = OutputType.VIDEO_NOTE
 
                     mp4_bytes = convert(output_type, input_video_url=input_file_url)
+
+                    if not ensure_valid_converted_file(
+                        file_bytes=mp4_bytes,
+                        update=update,
+                        context=context
+                    ):
+                        callback_query.answer()
+
+                        return
 
                     output_bytes.write(mp4_bytes)
 
