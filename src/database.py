@@ -10,7 +10,7 @@ from peewee import (
     DateTimeField, TextField, BigIntegerField,
     PeeweeException, SqliteDatabase
 )
-from peewee_migrate import Migrator, Router
+from peewee_migrate import Router
 from playhouse.sqlite_ext import RowIDField
 
 from constants import GENERIC_DATE_TIME_FORMAT, EPOCH_DATE
@@ -20,8 +20,6 @@ logger = logging.getLogger(__name__)
 database = SqliteDatabase('file_convert.sqlite')
 
 database.connect()
-
-migrator = Migrator(database)
 
 router = Router(database, migrate_table='migration', logger=logger)
 
@@ -118,7 +116,9 @@ class User(BaseModel):
 
         return users_table
 
+
+migrator = router.migrator
+
 migrator.create_table(User)
 
-router.migrator = migrator
 router.run()
