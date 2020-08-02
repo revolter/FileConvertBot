@@ -39,7 +39,7 @@ class BaseModel(Model):
 
 
 class User(BaseModel):
-    id = TextField(primary_key=False, unique=True, default=uuid4)
+    id = TextField(unique=True, default=uuid4)
     telegram_id = BigIntegerField(unique=True)
     telegram_username = TextField(null=True)
 
