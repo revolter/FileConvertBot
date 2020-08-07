@@ -726,13 +726,13 @@ def main():
     dispatcher.add_handler(telegram.ext.MessageHandler(message_text_filters, message_text_handler))
     dispatcher.add_handler(telegram.ext.CallbackQueryHandler(message_answer_handler))
 
-    dispatcher.add_error_handler(error_handler)
-
     if cli_args.debug:
         logger.info('Started polling')
 
         updater.start_polling(timeout=0.01)
     else:
+        dispatcher.add_error_handler(error_handler)
+
         if cli_args.server and not cli_args.polling:
             logger.info('Started webhook')
 
