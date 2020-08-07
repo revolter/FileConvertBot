@@ -564,7 +564,8 @@ def message_text_handler(update: telegram.Update, context: telegram.ext.Callback
         output_bytes.write(mp4_bytes)
         output_bytes.seek(0)
 
-        caption = caption[:telegram.constants.MAX_CAPTION_LENGTH]
+        if caption is not None:
+            caption = caption[:telegram.constants.MAX_CAPTION_LENGTH]
 
         utils.send_video(bot, chat_id, message_id, output_bytes, caption, chat_type)
 
