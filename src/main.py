@@ -477,7 +477,10 @@ def message_text_handler(update: telegram.Update, context: telegram.ext.Callback
 
     analytics_handler.track(analytics.AnalyticsType.MESSAGE, user)
 
-    entity, text = next(((entity, text) for entity, text in entities.items() if entity.type in [telegram.MessageEntity.URL, telegram.MessageEntity.TEXT_LINK]), None)
+    valid_entities = {
+        entity: text for entity, text in entities.items() if entity.type in [telegram.MessageEntity.URL, telegram.MessageEntity.TEXT_LINK]
+    }
+    entity, text = next(iter(valid_entities.items()))
 
     if entity is None:
         return
