@@ -10,9 +10,9 @@ def migrate(migrator: peewee_migrate.Migrator, database: peewee.Database, fake=F
     if fake is True:
         return
 
-    User = migrator.orm['user']
+    user_class = migrator.orm['user']
 
-    for user in User.select():
+    for user in user_class.select():
         user.created_at = user.created_at.strftime(GENERIC_DATE_TIME_FORMAT)
         user.updated_at = user.updated_at.strftime(GENERIC_DATE_TIME_FORMAT)
 
