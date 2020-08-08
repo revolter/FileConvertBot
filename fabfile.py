@@ -99,7 +99,7 @@ def setup(connection: fabric.Connection) -> None:
 
 @fabric.task(pre=[configure], hosts=[GlobalConfig.host], help={'filename': 'An optional filename to deploy to the server'})
 def upload(connection: fabric.Connection, filename: typing.Optional[str] = None) -> None:
-    def upload_file(file_format: str, file_name: str, destination_path_format: str = '{.project_name}/{}') -> None:
+    def upload_file(file_format: str, file_name: str, destination_path_format='{.project_name}/{}') -> None:
         connection.put(file_format.format(file_name), destination_path_format.format(GlobalConfig, file_name))
 
     def upload_directory(directory_name: str) -> None:
