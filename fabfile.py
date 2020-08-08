@@ -86,7 +86,7 @@ def upload(context: invoke.Context, filename: typing.Optional[str] = None) -> No
     def upload_directory(directory_name: str) -> None:
         execute(context, 'mkdir -p {.project_name}/{}'.format(env, directory_name))
 
-        for _, _, files in os.walk('src/{}'.format(directory_name)):
+        for _root, _directories, files in os.walk('src/{}'.format(directory_name)):
             for file in files:
                 upload_file('src/{}/{{}}'.format(directory_name), file, '{{.project_name}}/{}/{{}}'.format(directory_name))
 
