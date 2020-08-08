@@ -73,7 +73,7 @@ fab deploy
 ```
 
 You can also deploy a single file using `fab deploy --filename=main.py` or `fab
-deploy --source=meta --filename=Pipfile`.
+deploy --filename=Pipfile`.
 
 ## Dependencies
 
