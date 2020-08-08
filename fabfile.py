@@ -128,7 +128,6 @@ def backup(context: invoke.Context, filename: str) -> None:
     current_date = datetime.datetime.now().strftime(src.constants.GENERIC_DATE_FORMAT)
     name, extension = os.path.splitext(filename)
 
-    # This currently does nothing: http://www.fabfile.org/upgrading.html?highlight=cd#actual-remote-steps.
     with context.cd(env.project_name):
         context.get('{.project_name}/{}'.format(env, filename), 'backup_{}_{}{}'.format(name, current_date, extension))
 
