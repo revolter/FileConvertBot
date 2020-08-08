@@ -8,7 +8,7 @@ GOOGLE_ANALYTICS_BASE_URL = 'https://www.google-analytics.com/collect?v=1&t=even
 LOGS_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
 GENERIC_DATE_FORMAT = '%Y-%m-%d'
-GENERIC_DATE_TIME_FORMAT = '{} %H:%M:%S'.format(GENERIC_DATE_FORMAT)
+GENERIC_DATE_TIME_FORMAT = f'{GENERIC_DATE_FORMAT} %H:%M:%S'
 
 EPOCH_DATE = datetime.datetime(1970, 1, 1)
 

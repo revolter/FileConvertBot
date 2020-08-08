@@ -54,7 +54,7 @@ class GlobalConfig:
             cls.project_path = fabfile_config.get('Fabric', 'ProjectPath')
         except configparser.Error as error:
             raise invoke.Exit(
-                message='Config error: {}'.format(error),
+                message=f'Config error: {error}',
                 code=1
             )
 
@@ -79,35 +79,35 @@ def execute(connection: fabric.Connection, command: typing.Optional[str] = None)
 
 @fabric.task(pre=[configure], hosts=[GlobalConfig.host])
 def cleanup(connection: fabric.Connection) -> None:
-    question = 'Are you sure you want to completely delete the project "{0.project_name}" from "{0.host}"?'.format(GlobalConfig)
+    question = f'Are you sure you want to completely delete the project "{GlobalConfig.project_name}" from "{GlobalConfig.host}"?'
 
     if invocations.console.confirm(
         question=question,
         assume_yes=False
     ):
-        execute(connection, 'rm -rf {.project_name}'.format(GlobalConfig))
-        execute(connection, 'rm -rf {0.project_path}/{0.project_name}'.format(GlobalConfig))
+        execute(connection, f'rm -rf {GlobalConfig.project_name}')
+        execute(connection, f'rm -rf {GlobalConfig.project_path}/{GlobalConfig.project_name}')
 
 
 @fabric.task(pre=[configure, cleanup], hosts=[GlobalConfig.host])
 def setup(connection: fabric.Connection) -> None:
-    execute(connection, 'mkdir -p {0.project_path}/{0.project_name}'.format(GlobalConfig))
-    execute(connection, 'ln -s {0.project_path}/{0.project_name} {0.project_name}'.format(GlobalConfig))
+    execute(connection, f'mkdir -p {GlobalConfig.project_path}/{GlobalConfig.project_name}')
+    execute(connection, f'ln -s {GlobalConfig.project_path}/{GlobalConfig.project_name} {GlobalConfig.project_name}')
 
     execute(connection, 'python -m pip install --user pipenv')
 
 
 @fabric.task(pre=[configure], hosts=[GlobalConfig.host], help={'filename': 'An optional filename to deploy to the server'})
 def upload(connection: fabric.Connection, filename: typing.Optional[str] = None) -> None:
-    def upload_file(file_format: str, file_name: str, destination_path_format: str = '{.project_name}/{}') -> None:
+    def upload_file(file_format: str, file_name: str, destination_path_format='{.project_name}/{}') -> None:
         connection.put(file_format.format(file_name), destination_path_format.format(GlobalConfig, file_name))
 
     def upload_directory(directory_name: str) -> None:
-        execute(connection, 'mkdir -p {.project_name}/{}'.format(GlobalConfig, directory_name))
+        execute(connection, f'mkdir -p {GlobalConfig.project_name}/{directory_name}')
 
-        for _root, _directories, files in os.walk('src/{}'.format(directory_name)):
+        for _root, _directories, files in os.walk(f'src/{directory_name}'):
             for file in files:
-                upload_file('src/{}/{{}}'.format(directory_name), file, '{{.project_name}}/{}/{{}}'.format(directory_name))
+                upload_file(f'src/{directory_name}/{{}}', file, f'{{.project_name}}/{directory_name}/{{}}')
 
     if not filename:
         for name in GlobalConfig.source_filenames:
@@ -127,7 +127,7 @@ def upload(connection: fabric.Connection, filename: typing.Optional[str] = None)
             elif filename in GlobalConfig.meta_filenames:
                 file_path_format = '{}'
             else:
-                raise invoke.ParseError('Filename "{}" is not registered'.format(filename))
+                raise invoke.ParseError(f'Filename "{filename}" is not registered')
 
             upload_file(file_path_format, filename)
 
@@ -146,7 +146,7 @@ def backup(connection: fabric.Connection, filename: str) -> None:
     name, extension = os.path.splitext(filename)
 
     with connection.cd(GlobalConfig.project_name):
-        connection.get('{.project_name}/{}'.format(GlobalConfig, filename), 'backup_{}_{}{}'.format(name, current_date, extension))
+        connection.get(f'{GlobalConfig.project_name}/{filename}', f'backup_{name}_{current_date}{extension}')
 
 
 @fabric.task(pre=[configure], hosts=[GlobalConfig.host])

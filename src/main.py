@@ -50,9 +50,9 @@ def create_or_update_user(bot: telegram.Bot, user: telegram.User) -> None:
 
         bot.send_message(
             chat_id=ADMIN_USER_ID,
-            text='{} {}'.format(
-                telegram_utils.escape_v2_markdown_text(prefix),
-                db_user.get_markdown_description()
+            text=(
+                f'{telegram_utils.escape_v2_markdown_text(prefix)} '
+                f'{db_user.get_markdown_description()}'
             ),
             parse_mode=telegram.ParseMode.MARKDOWN_V2
         )
@@ -210,9 +210,9 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
                         emoji = sticker['emoji']
                         set_name = sticker['set_name']
 
-                        caption = 'Sticker for the emoji "{}" from the set "{}"'.format(emoji, set_name)
+                        caption = f'Sticker for the emoji "{emoji}" from the set "{set_name}"'
                 except Exception as error:
-                    logger.error('PIL error: {}'.format(error))
+                    logger.error(f'PIL error: {error}')
         else:
             if probe:
                 for stream in probe['streams']:
@@ -282,7 +282,7 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
 
                         output_type = constants.OutputType.PHOTO
                 except Exception as error:
-                    logger.error('pdf2image error: {}'.format(error))
+                    logger.error(f'pdf2image error: {error}')
 
                 if output_type == constants.OutputType.NONE:
                     try:
@@ -297,7 +297,7 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
 
                             output_type = constants.OutputType.STICKER
                     except Exception as error:
-                        logger.error('PIL error: {}'.format(error))
+                        logger.error(f'PIL error: {error}')
 
         if output_type == constants.OutputType.NONE:
             if chat_type == telegram.Chat.PRIVATE:
@@ -305,8 +305,8 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
                     invalid_format = os.path.splitext(input_file_url)[1][1:]
 
                 bot.send_message(
-                    chat_id,
-                    'File type "{}" is not yet supported.'.format(invalid_format),
+                    chat_id=chat_id,
+                    text=f'File type "{invalid_format}" is not yet supported.',
                     reply_to_message_id=message_id
                 )
 
@@ -459,8 +459,8 @@ def message_video_handler(update: telegram.Update, context: telegram.ext.Callbac
                 invalid_format = os.path.splitext(input_file_url)[1][1:]
 
             bot.send_message(
-                chat_id,
-                'File type "{}" is not yet supported.'.format(invalid_format),
+                chat_id=chat_id,
+                text=f'File type "{invalid_format}" is not yet supported.',
                 reply_to_message_id=message_id
             )
 
@@ -565,7 +565,7 @@ def message_text_handler(update: telegram.Update, context: telegram.ext.Callback
                     return
 
         except Exception as error:
-            logger.error('youtube-dl error: {}'.format(error))
+            logger.error(f'youtube-dl error: {error}')
 
         if chat_type == telegram.Chat.PRIVATE and (caption is None or video_url is None):
             bot.send_message(
@@ -679,8 +679,8 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
                     invalid_format = os.path.splitext(input_file_url)[1][1:]
 
                 bot.send_message(
-                    chat_id,
-                    'File type "{}" is not yet supported.'.format(invalid_format),
+                    chat_id=chat_id,
+                    text=f'File type "{invalid_format}" is not yet supported.',
                     reply_to_message_id=message_id
                 )
 
@@ -717,7 +717,7 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
 
 
 def error_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
-    logger.error('Update "{}" caused error "{}"'.format(json.dumps(update.to_dict(), indent=4), context.error))
+    logger.error(f'Update "{json.dumps(update.to_dict(), indent=4)}" caused error "{context.error}"')
 
 
 def main() -> None:
@@ -828,7 +828,7 @@ if __name__ == '__main__':
         BOT_NAME = config.get('Telegram', 'Name' if cli_args.server else 'TestName')
         BOT_TOKEN = config.get('Telegram', 'Key' if cli_args.server else 'TestKey')
     except configparser.Error as config_error:
-        logger.error('Config error: {}'.format(config_error))
+        logger.error(f'Config error: {config_error}')
 
         sys.exit(1)
 
@@ -846,7 +846,7 @@ if __name__ == '__main__':
         if not cli_args.debug:
             analytics_handler.googleToken = config.get('Google', 'Key')
     except configparser.Error as config_error:
-        logger.warning('Config error: {}'.format(config_error))
+        logger.warning(f'Config error: {config_error}')
 
     analytics_handler.userAgent = BOT_NAME
 
