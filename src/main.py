@@ -13,7 +13,6 @@ import threading
 import ffmpeg
 import pdf2image
 import PIL
-import telegram
 import telegram.ext
 import telegram.utils.helpers
 import telegram_utils

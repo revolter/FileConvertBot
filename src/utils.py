@@ -6,7 +6,6 @@ import logging
 import typing
 
 import ffmpeg
-import telegram
 import telegram.ext
 
 import analytics
