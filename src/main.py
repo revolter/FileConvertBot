@@ -16,6 +16,7 @@ import PIL
 import telegram
 import telegram.ext
 import telegram.utils.helpers
+import telegram_utils
 import youtube_dl
 
 import analytics
@@ -46,7 +47,16 @@ def create_or_update_user(bot: telegram.Bot, user: telegram.User) -> None:
     db_user = database.User.create_or_update_user(user.id, user.username)
 
     if db_user:
-        bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_markdown_description()), parse_mode=telegram.ParseMode.MARKDOWN)
+        prefix = 'New user:'
+
+        bot.send_message(
+            chat_id=ADMIN_USER_ID,
+            text='{} {}'.format(
+                telegram_utils.escape_v2_markdown_text(prefix),
+                db_user.get_markdown_description()
+            ),
+            parse_mode=telegram.ParseMode.MARKDOWN_V2
+        )
 
 
 def start_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
@@ -99,7 +109,11 @@ def users_command_handler(update: telegram.Update, context: telegram.ext.Callbac
     if not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
-    bot.send_message(chat_id, database.User.get_users_table('updated' in context.args), parse_mode=telegram.ParseMode.MARKDOWN)
+    bot.send_message(
+        chat_id=chat_id,
+        text=database.User.get_users_table('updated' in context.args),
+        parse_mode=telegram.ParseMode.MARKDOWN_V2
+    )
 
 
 def message_file_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:

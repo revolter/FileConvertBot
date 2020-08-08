@@ -10,8 +10,10 @@ import uuid
 import peewee
 import peewee_migrate
 import playhouse.sqlite_ext
+import telegram
 
 import constants
+import telegram_utils
 
 logger = logging.getLogger(__name__)
 
@@ -42,9 +44,27 @@ class User(BaseModel):
     telegram_username = peewee.TextField(null=True)
 
     def get_markdown_description(self) -> str:
-        username = '`@{}`'.format(self.telegram_username) if self.telegram_username else '-'
+        if self.telegram_username is None:
+            username = telegram_utils.escape_v2_markdown_text('-')
+        else:
+            escaped_username = telegram_utils.escape_v2_markdown_text(
+                text='@{}'.format(self.telegram_username),
+                entity_type=telegram.MessageEntity.CODE
+            )
+            username = '`{}`'.format(escaped_username)
 
-        return '{0.rowid}. | [{0.telegram_id}](tg://user?id={0.telegram_id}) | {1}'.format(self, username)
+        user_id = telegram_utils.escape_v2_markdown_text_link(
+            text=str(self.telegram_id),
+            url='tg://user?id={}'.format(self.telegram_id)
+        )
+
+        return '{}{} {} {} {} {}'.format(
+            self.rowid, telegram_utils.ESCAPED_FULL_STOP,
+            telegram_utils.ESCAPED_VERTICAL_LINE,
+            user_id,
+            telegram_utils.ESCAPED_VERTICAL_LINE,
+            username
+        )
 
     def get_created_at(self) -> str:
         date = typing.cast(datetime.datetime, self.created_at)
@@ -100,11 +120,13 @@ class User(BaseModel):
             query = query.order_by(sort_field.desc()).limit(10)
 
             for user in reversed(query):
-                users_table += '\n{} | {} | {}'.format(
+                users_table += '\n{} {} {} {} {}'.format(
                     user.get_markdown_description(),
+                    telegram_utils.ESCAPED_VERTICAL_LINE,
 
-                    user.get_created_at(),
-                    user.get_updated_ago()
+                    telegram_utils.escape_v2_markdown_text(user.get_created_at()),
+                    telegram_utils.ESCAPED_VERTICAL_LINE,
+                    telegram_utils.escape_v2_markdown_text(user.get_updated_ago())
                 )
         except peewee.PeeweeException:
             pass
