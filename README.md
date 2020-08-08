@@ -46,7 +46,7 @@ cp config_sample.cfg config.cfg
 ```
 
 Then, edit the file named `config.cfg` inside the `src` folder with the correct
-values and run it using `./main.py -d`.
+values and run it using `./main.py --debug`.
 
 Use `exit` to close the virtual environment.
 
