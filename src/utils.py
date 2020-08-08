@@ -39,11 +39,11 @@ def ensure_size_under_limit(size: int, limit: int, update: telegram.Update, cont
         chat_id = chat.id
 
         context.bot.send_message(
-            chat_id,
-            '{} size {} exceeds the maximum limit of {} (limit imposed by Telegram, not by this bot).'.format(
-                file_reference_text,
-                get_size_string_from_bytes(size),
-                get_size_string_from_bytes(limit)
+            chat_id=chat_id,
+            text=(
+                f'{file_reference_text} size {get_size_string_from_bytes(size)} '
+                f'exceeds the maximum limit of {get_size_string_from_bytes(limit)} '
+                '(limit imposed by Telegram, not by this bot).'
             ),
             reply_to_message_id=message_id
         )
@@ -178,7 +178,7 @@ def convert(output_type: str, input_video_url: typing.Optional[str] = None, inpu
                     .run(capture_stdout=True)
             )[0]
     except ffmpeg.Error as error:
-        logger.error('ffmpeg error: {}'.format(error))
+        logger.error(f'ffmpeg error: {error}')
 
     return None
 

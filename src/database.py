@@ -48,22 +48,20 @@ class User(BaseModel):
             username = telegram_utils.escape_v2_markdown_text('-')
         else:
             escaped_username = telegram_utils.escape_v2_markdown_text(
-                text='@{}'.format(self.telegram_username),
+                text=f'@{self.telegram_username}',
                 entity_type=telegram.MessageEntity.CODE
             )
-            username = '`{}`'.format(escaped_username)
+            username = f'`{escaped_username}`'
 
         user_id = telegram_utils.escape_v2_markdown_text_link(
             text=str(self.telegram_id),
-            url='tg://user?id={}'.format(self.telegram_id)
+            url=f'tg://user?id={self.telegram_id}'
         )
 
-        return '{}{} {} {} {} {}'.format(
-            self.rowid, telegram_utils.ESCAPED_FULL_STOP,
-            telegram_utils.ESCAPED_VERTICAL_LINE,
-            user_id,
-            telegram_utils.ESCAPED_VERTICAL_LINE,
-            username
+        return (
+            f'{self.rowid}{telegram_utils.ESCAPED_FULL_STOP} {telegram_utils.ESCAPED_VERTICAL_LINE} '
+            f'{user_id} {telegram_utils.ESCAPED_VERTICAL_LINE} '
+            f'{username}'
         )
 
     def get_created_at(self) -> str:
@@ -78,7 +76,7 @@ class User(BaseModel):
         delta_seconds = round((datetime.datetime.now() - self.updated_at).total_seconds())
         time_ago = str(datetime.datetime.fromtimestamp(delta_seconds) - constants.EPOCH_DATE)
 
-        return '{} ago'.format(time_ago)
+        return f'{time_ago} ago'
 
     @classmethod
     def create_or_update_user(cls, id: int, username: str) -> typing.Optional[User]:
@@ -101,7 +99,7 @@ class User(BaseModel):
             if is_created:
                 return db_user
         except peewee.PeeweeException as error:
-            logger.error('Database error: "{}" for id: {} and username: {}'.format(error, id, username))
+            logger.error(f'Database error: "{error}" for id: {id} and username: {username}')
 
         return None
 
@@ -120,13 +118,10 @@ class User(BaseModel):
             query = query.order_by(sort_field.desc()).limit(10)
 
             for user in reversed(query):
-                users_table += '\n{} {} {} {} {}'.format(
-                    user.get_markdown_description(),
-                    telegram_utils.ESCAPED_VERTICAL_LINE,
-
-                    telegram_utils.escape_v2_markdown_text(user.get_created_at()),
-                    telegram_utils.ESCAPED_VERTICAL_LINE,
-                    telegram_utils.escape_v2_markdown_text(user.get_updated_ago())
+                users_table += (
+                    f'\n{user.get_markdown_description()} {telegram_utils.ESCAPED_VERTICAL_LINE} '
+                    f'{telegram_utils.escape_v2_markdown_text(user.get_created_at())} {telegram_utils.ESCAPED_VERTICAL_LINE} '
+                    f'{telegram_utils.escape_v2_markdown_text(user.get_updated_ago())}'
                 )
         except peewee.PeeweeException:
             pass

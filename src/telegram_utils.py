@@ -20,7 +20,7 @@ def escape_v2_markdown_text_link(text: str, url: str) -> str:
         entity_type=telegram.MessageEntity.TEXT_LINK
     )
 
-    return '[{}]({})'.format(escaped_text, escaped_url)
+    return f'[{escaped_text}]({escaped_url})'
 
 
 ESCAPED_FULL_STOP = escape_v2_markdown_text('.')
