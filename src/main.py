@@ -187,7 +187,9 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
                     with io.BytesIO() as image_bytes:
                         image.save(image_bytes, format='PNG')
 
-                        output_bytes.write(image_bytes.getbuffer())
+                        image_bytes.seek(0)
+
+                        output_bytes.write(image_bytes.read())
 
                         output_type = constants.OutputType.PHOTO
 
@@ -252,14 +254,18 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
             with io.BytesIO() as input_bytes:
                 input_file.download(out=input_bytes)
 
+                input_bytes.seek(0)
+
                 try:
-                    images = pdf2image.convert_from_bytes(input_bytes.getbuffer())
+                    images = pdf2image.convert_from_bytes(input_bytes.read())
                     image = images[0]
 
                     with io.BytesIO() as image_bytes:
                         image.save(image_bytes, format='PNG')
 
-                        output_bytes.write(image_bytes.getbuffer())
+                        image_bytes.seek(0)
+
+                        output_bytes.write(image_bytes.read())
 
                         output_type = constants.OutputType.PHOTO
                 except Exception as error:
@@ -272,7 +278,9 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
                         with io.BytesIO() as image_bytes:
                             image.save(image_bytes, format='WEBP')
 
-                            output_bytes.write(image_bytes.getbuffer())
+                            image_bytes.seek(0)
+
+                            output_bytes.write(image_bytes.read())
 
                             output_type = constants.OutputType.STICKER
                     except Exception as error:
