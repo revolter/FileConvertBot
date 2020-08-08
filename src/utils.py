@@ -188,10 +188,12 @@ def get_size_string_from_bytes(bytes_count: int, suffix='B') -> str:
     Partially copied from https://stackoverflow.com/a/1094933/865175.
     """
 
-    for unit in ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']:
-        if abs(bytes_count) < 1000.0:
-            return '%3.1f %s%s' % (bytes_count, unit, suffix)
+    converted_bytes_count = float(bytes_count)
 
-        converted_bytes_count = bytes_count / 1000.0
+    for unit in ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']:
+        if abs(converted_bytes_count) < 1000.0:
+            return '%3.1f %s%s' % (converted_bytes_count, unit, suffix)
+
+        converted_bytes_count /= 1000.0
 
     return '%.1f %s%s' % (converted_bytes_count, 'Y', suffix)
