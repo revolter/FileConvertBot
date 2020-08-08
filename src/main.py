@@ -28,28 +28,28 @@ custom_logger.configure_root_logger()
 
 logger = logging.getLogger(__name__)
 
-BOT_NAME = None
-BOT_TOKEN = None
+BOT_NAME: str
+BOT_TOKEN: str
 
-ADMIN_USER_ID = None
+ADMIN_USER_ID: int
 
 updater: telegram.ext.Updater
 analytics_handler: analytics.AnalyticsHandler
 
 
-def stop_and_restart():
+def stop_and_restart() -> None:
     updater.stop()
     os.execl(sys.executable, sys.executable, *sys.argv)
 
 
-def create_or_update_user(bot, user):
+def create_or_update_user(bot: telegram.Bot, user: telegram.User) -> None:
     db_user = database.User.create_or_update_user(user.id, user.username)
 
-    if db_user and ADMIN_USER_ID:
+    if db_user:
         bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_markdown_description()), parse_mode=telegram.ParseMode.MARKDOWN)
 
 
-def start_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
+def start_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     message = update.message
     bot = context.bot
 
@@ -63,7 +63,7 @@ def start_command_handler(update: telegram.Update, context: telegram.ext.Callbac
     bot.send_message(chat_id, 'Send me a file to try to convert it to something better.')
 
 
-def restart_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
+def restart_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     message = update.message
     bot = context.bot
 
@@ -75,7 +75,7 @@ def restart_command_handler(update: telegram.Update, context: telegram.ext.Callb
     threading.Thread(target=stop_and_restart).start()
 
 
-def logs_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
+def logs_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     message = update.message
     bot = context.bot
 
@@ -90,7 +90,7 @@ def logs_command_handler(update: telegram.Update, context: telegram.ext.Callback
         bot.send_message(chat_id, 'Log is empty')
 
 
-def users_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
+def users_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     message = update.message
     bot = context.bot
 
@@ -102,7 +102,7 @@ def users_command_handler(update: telegram.Update, context: telegram.ext.Callbac
     bot.send_message(chat_id, database.User.get_users_table('updated' in context.args), parse_mode=telegram.ParseMode.MARKDOWN)
 
 
-def message_file_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
+def message_file_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     message = update.effective_message
     chat_type = update.effective_chat.type
     bot = context.bot
@@ -173,7 +173,8 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
             ):
                 return
 
-            output_bytes.write(mp3_bytes)
+            if mp3_bytes is not None:
+                output_bytes.write(mp3_bytes)
 
             output_bytes.name = 'voice.mp3'
         elif message_type == 'sticker':
@@ -218,7 +219,8 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
                         ):
                             return
 
-                        output_bytes.write(opus_bytes)
+                        if opus_bytes is not None:
+                            output_bytes.write(opus_bytes)
 
                         break
                     elif codec_name == 'opus':
@@ -239,7 +241,8 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
                         ):
                             return
 
-                        output_bytes.write(mp4_bytes)
+                        if mp4_bytes is not None:
+                            output_bytes.write(mp4_bytes)
 
                         break
                     else:
@@ -360,7 +363,7 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
         )
 
 
-def message_video_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
+def message_video_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     message = update.effective_message
     chat_type = update.effective_chat.type
     bot = context.bot
@@ -423,7 +426,8 @@ def message_video_handler(update: telegram.Update, context: telegram.ext.Callbac
                     ):
                         return
 
-                    output_bytes.write(mp4_bytes)
+                    if mp4_bytes is not None:
+                        output_bytes.write(mp4_bytes)
 
                     break
                 else:
@@ -460,7 +464,7 @@ def message_video_handler(update: telegram.Update, context: telegram.ext.Callbac
     )
 
 
-def message_text_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
+def message_text_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     message = update.effective_message
     chat_type = update.effective_chat.type
     bot = context.bot
@@ -561,7 +565,9 @@ def message_text_handler(update: telegram.Update, context: telegram.ext.Callback
         ):
             return
 
-        output_bytes.write(mp4_bytes)
+        if mp4_bytes is not None:
+            output_bytes.write(mp4_bytes)
+
         output_bytes.seek(0)
 
         if caption is not None:
@@ -570,7 +576,7 @@ def message_text_handler(update: telegram.Update, context: telegram.ext.Callback
         utils.send_video(bot, chat_id, message_id, output_bytes, caption, chat_type)
 
 
-def message_answer_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
+def message_answer_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     callback_query = update.callback_query
     callback_data = json.loads(callback_query.data)
 
@@ -639,7 +645,8 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
 
                         return
 
-                    output_bytes.write(mp4_bytes)
+                    if mp4_bytes is not None:
+                        output_bytes.write(mp4_bytes)
 
                     break
                 else:
@@ -688,11 +695,11 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
     callback_query.answer()
 
 
-def error_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
+def error_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     logger.error('Update "{}" caused error "{}"'.format(json.dumps(update.to_dict(), indent=4), context.error))
 
 
-def main():
+def main() -> None:
     message_file_filters = (
         (
             telegram.ext.Filters.audio |
@@ -772,9 +779,7 @@ def main():
 
     logger.info('Bot started. Press Ctrl-C to stop.')
 
-    if ADMIN_USER_ID:
-        updater.bot.send_message(ADMIN_USER_ID, 'Bot has been restarted')
-
+    updater.bot.send_message(ADMIN_USER_ID, 'Bot has been restarted')
     updater.idle()
 
 

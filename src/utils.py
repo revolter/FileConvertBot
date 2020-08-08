@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import io
 import json
 import logging
+import typing
 
 import ffmpeg
 import telegram
@@ -13,7 +15,7 @@ import constants
 logger = logging.getLogger(__name__)
 
 
-def check_admin(bot, message, analytics_handler, admin_user_id):
+def check_admin(bot: telegram.Bot, message: telegram.Message, analytics_handler: analytics.AnalyticsHandler, admin_user_id: int) -> bool:
     analytics_handler.track(analytics.AnalyticsType.COMMAND, message.from_user, message.text)
 
     if not admin_user_id or message.from_user.id != admin_user_id:
@@ -24,7 +26,7 @@ def check_admin(bot, message, analytics_handler, admin_user_id):
     return True
 
 
-def ensure_size_under_limit(size, limit, update: telegram.Update, context: telegram.ext.CallbackContext, file_reference_text='File'):
+def ensure_size_under_limit(size: int, limit: int, update: telegram.Update, context: telegram.ext.CallbackContext, file_reference_text='File') -> bool:
     if size <= limit:
         return True
 
@@ -50,7 +52,7 @@ def ensure_size_under_limit(size, limit, update: telegram.Update, context: teleg
     return False
 
 
-def ensure_valid_converted_file(file_bytes, update: telegram.Update, context: telegram.ext.CallbackContext):
+def ensure_valid_converted_file(file_bytes: typing.Optional[bytes], update: telegram.Update, context: telegram.ext.CallbackContext) -> bool:
     if file_bytes is not None:
         return True
 
@@ -72,11 +74,9 @@ def ensure_valid_converted_file(file_bytes, update: telegram.Update, context: te
     return False
 
 
-def send_video(bot, chat_id, message_id, output_bytes, caption, chat_type):
+def send_video(bot: telegram.Bot, chat_id: int, message_id: int, output_bytes: io.BytesIO, caption: typing.Optional[str], chat_type: str) -> None:
     if chat_type == telegram.Chat.PRIVATE:
-        data = {}
-
-        button = telegram.InlineKeyboardButton('Rounded', callback_data=json.dumps(data))
+        button = telegram.InlineKeyboardButton('Rounded', callback_data=json.dumps({}))
         reply_markup = telegram.InlineKeyboardMarkup([[button]])
     else:
         reply_markup = None
@@ -91,7 +91,7 @@ def send_video(bot, chat_id, message_id, output_bytes, caption, chat_type):
     )
 
 
-def send_video_note(bot, chat_id, message_id, output_bytes):
+def send_video_note(bot: telegram.Bot, chat_id: int, message_id: int, output_bytes: io.BytesIO) -> None:
     bot.send_video_note(
         chat_id,
         output_bytes,
@@ -99,21 +99,24 @@ def send_video_note(bot, chat_id, message_id, output_bytes):
     )
 
 
-def get_file_size(video_url):
+def get_file_size(video_url: str) -> int:
     info = ffmpeg.probe(video_url, show_entries='format=size')
     size = info.get('format', {}).get('size')
 
     return int(size)
 
 
-def has_audio_stream(video_url):
+def has_audio_stream(video_url: typing.Optional[str]) -> bool:
+    if not video_url:
+        return False
+
     info = ffmpeg.probe(video_url, select_streams='a', show_entries='format=:streams=index')
     streams = info.get('streams', [])
 
     return len(streams) > 0
 
 
-def convert(output_type, input_video_url=None, input_audio_url=None):
+def convert(output_type: str, input_video_url: typing.Optional[str] = None, input_audio_url: typing.Optional[str] = None) -> typing.Optional[bytes]:
     try:
         if output_type == constants.OutputType.AUDIO:
             return (
@@ -175,11 +178,13 @@ def convert(output_type, input_video_url=None, input_audio_url=None):
                     .output('pipe:', format='mp3', strict='-2')
                     .run(capture_stdout=True)
             )[0]
-    except ffmpeg.Error:
-        return None
+    except ffmpeg.Error as error:
+        logger.error('ffmpeg error: {}'.format(error))
+
+    return None
 
 
-def get_size_string_from_bytes(bytes_count, suffix='B'):
+def get_size_string_from_bytes(bytes_count: int, suffix='B') -> str:
     """
     Partially copied from https://stackoverflow.com/a/1094933/865175.
     """
@@ -188,6 +193,6 @@ def get_size_string_from_bytes(bytes_count, suffix='B'):
         if abs(bytes_count) < 1000.0:
             return '%3.1f %s%s' % (bytes_count, unit, suffix)
 
-        bytes_count /= 1000.0
+        converted_bytes_count = bytes_count / 1000.0
 
-    return '%.1f %s%s' % (bytes_count, 'Y', suffix)
+    return '%.1f %s%s' % (converted_bytes_count, 'Y', suffix)

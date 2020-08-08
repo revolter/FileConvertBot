@@ -2,6 +2,7 @@
 
 import enum
 import logging
+import typing
 
 import requests
 import telegram.ext
@@ -17,11 +18,11 @@ class AnalyticsType(enum.Enum):
 
 
 class AnalyticsHandler:
-    def __init__(self):
-        self.googleToken = None
-        self.userAgent = None
+    def __init__(self) -> None:
+        self.googleToken: typing.Optional[str] = None
+        self.userAgent: typing.Optional[str] = None
 
-    def __google_track(self, analytics_type, user, data):
+    def __google_track(self, analytics_type: AnalyticsType, user: telegram.User, data: str) -> None:
         if not self.googleToken:
             return
 
@@ -33,5 +34,8 @@ class AnalyticsHandler:
             logger.error('Google analytics error: {}'.format(response.status_code))
 
     @telegram.ext.dispatcher.run_async
-    def track(self, analytics_type, user, data=''):
+    def track(self, analytics_type: AnalyticsType, user: telegram.User, data='') -> None:
+        if data is None:
+            data = ''
+
         self.__google_track(analytics_type, user, data)

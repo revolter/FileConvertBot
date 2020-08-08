@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 import datetime
 import logging
 import typing
@@ -20,7 +22,7 @@ database.connect()
 router = peewee_migrate.Router(database, migrate_table='migration', logger=logger)
 
 
-def get_current_datetime():
+def get_current_datetime() -> str:
     return datetime.datetime.now().strftime(constants.GENERIC_DATE_TIME_FORMAT)
 
 
@@ -39,17 +41,17 @@ class User(BaseModel):
     telegram_id = peewee.BigIntegerField(unique=True)
     telegram_username = peewee.TextField(null=True)
 
-    def get_markdown_description(self):
+    def get_markdown_description(self) -> str:
         username = '`@{}`'.format(self.telegram_username) if self.telegram_username else '-'
 
         return '{0.rowid}. | [{0.telegram_id}](tg://user?id={0.telegram_id}) | {1}'.format(self, username)
 
-    def get_created_at(self):
+    def get_created_at(self) -> str:
         date = typing.cast(datetime.datetime, self.created_at)
 
         return date.strftime(constants.GENERIC_DATE_TIME_FORMAT)
 
-    def get_updated_ago(self):
+    def get_updated_ago(self) -> str:
         if self.updated_at == self.created_at:
             return '-'
 
@@ -59,7 +61,7 @@ class User(BaseModel):
         return '{} ago'.format(time_ago)
 
     @classmethod
-    def create_or_update_user(cls, id, username):
+    def create_or_update_user(cls, id: int, username: str) -> typing.Optional[User]:
         current_date_time = get_current_datetime()
 
         try:
@@ -84,7 +86,7 @@ class User(BaseModel):
         return None
 
     @classmethod
-    def get_users_table(cls, sorted_by_updated_at=False):
+    def get_users_table(cls, sorted_by_updated_at=False) -> str:
         users_table = ''
 
         try:

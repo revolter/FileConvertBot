@@ -2,8 +2,10 @@ import configparser
 import datetime
 import os
 import sys
+import typing
 
 import fabric
+import invoke
 from invoke import env
 
 import src.constants
@@ -45,13 +47,13 @@ env.source_directories = [
 
 
 @fabric.task
-def configure(context):
+def configure(context: invoke.Context) -> None:
     context.user = env.user
     context.connect_kwargs.key_filename = os.path.expanduser(env.key_filename)
 
 
 @fabric.task(pre=[configure], hosts=env.hosts, help={'command': 'The shell command to execute on the server'})
-def execute(context, command=None):
+def execute(context: invoke.Context, command: typing.Optional[str] = None) -> None:
     if not command:
         return
 
@@ -59,7 +61,7 @@ def execute(context, command=None):
 
 
 @fabric.task(pre=[configure], hosts=env.hosts)
-def cleanup(context):
+def cleanup(context: invoke.Context) -> None:
     prompt_message = 'Are you sure you want to completely delete the project "{0.project_name}" from "{0.hosts[0]}"? y/n: '.format(env)
     response = input(prompt_message)
 
@@ -69,7 +71,7 @@ def cleanup(context):
 
 
 @fabric.task(pre=[configure, cleanup], hosts=env.hosts)
-def setup(context):
+def setup(context: invoke.Context) -> None:
     execute(context, 'mkdir -p {0.project_path}/{0.project_name}'.format(env))
     execute(context, 'ln -s {0.project_path}/{0.project_name} {0.project_name}'.format(env))
 
@@ -77,11 +79,11 @@ def setup(context):
 
 
 @fabric.task(pre=[configure], hosts=env.hosts, help={'filename': 'An optional filename to deploy to the server'})
-def upload(context, filename=None):
-    def upload_file(file_format, file_name, destination_path_format='{.project_name}/{}'):
+def upload(context: invoke.Context, filename: typing.Optional[str] = None) -> None:
+    def upload_file(file_format: str, file_name: str, destination_path_format='{.project_name}/{}') -> None:
         context.put(file_format.format(file_name), destination_path_format.format(env, file_name))
 
-    def upload_directory(directory_name):
+    def upload_directory(directory_name: str) -> None:
         execute(context, 'mkdir -p {.project_name}/{}'.format(env, directory_name))
 
         for _, _, files in os.walk('src/{}'.format(directory_name)):
@@ -114,7 +116,7 @@ def upload(context, filename=None):
 
 
 @fabric.task(pre=[configure], hosts=env.hosts, help={'filename': 'An optional filename to deploy to the server'})
-def deploy(context, filename=None):
+def deploy(context: invoke.Context, filename: typing.Optional[str] = None) -> None:
     upload(context, filename)
 
     with context.cd(env.project_name):
@@ -122,7 +124,7 @@ def deploy(context, filename=None):
 
 
 @fabric.task(pre=[configure], hosts=env.hosts, help={'filename': 'The filename to backup locally from the server'})
-def backup(context, filename):
+def backup(context: invoke.Context, filename: str) -> None:
     current_date = datetime.datetime.now().strftime(src.constants.GENERIC_DATE_FORMAT)
     name, extension = os.path.splitext(filename)
 
@@ -132,5 +134,5 @@ def backup(context, filename):
 
 
 @fabric.task(pre=[configure], hosts=env.hosts)
-def backup_db(context):
+def backup_db(context: invoke.Context) -> None:
     backup(context, 'file_convert.sqlite')

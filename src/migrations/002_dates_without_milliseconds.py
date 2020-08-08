@@ -1,7 +1,12 @@
+import typing
+
+import peewee
+import peewee_migrate
+
 GENERIC_DATE_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 
-def migrate(migrator, database, fake=False, **kwargs):
+def migrate(migrator: peewee_migrate.Migrator, database: peewee.Database, fake=False, **kwargs: typing.Any) -> None:
     if fake is True:
         return
 

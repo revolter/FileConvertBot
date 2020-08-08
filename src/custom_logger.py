@@ -4,14 +4,14 @@ import constants
 
 
 class LoggerFilter(logging.Filter):
-    def __init__(self, level):
+    def __init__(self, level: int, name='') -> None:
         self.level = level
 
-    def filter(self, log_record):
+    def filter(self, log_record: logging.LogRecord) -> bool:
         return log_record.levelno <= self.level
 
 
-def configure_root_logger():
+def configure_root_logger() -> None:
     logger = logging.getLogger()
 
     logging.basicConfig(format=constants.LOGS_FORMAT, level=logging.INFO)

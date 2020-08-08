@@ -1,4 +1,10 @@
-def migrate(migrator, database, fake=False, **kwargs):
+import typing
+
+import peewee
+import peewee_migrate
+
+
+def migrate(migrator: peewee_migrate.Migrator, database: peewee.Database, fake=False, **kwargs: typing.Any) -> None:
     if fake is True:
         return
 
