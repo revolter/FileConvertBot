@@ -24,6 +24,7 @@ class GlobalConfig:
         'main.py',
         'database.py',
         'utils.py',
+        'telegram_utils.py',
         'analytics.py',
         'constants.py',
 
