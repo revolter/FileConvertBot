@@ -86,7 +86,7 @@ def logs_command_handler(update: telegram.Update, context: telegram.ext.Callback
 
     try:
         bot.send_document(chat_id, open('errors.log', 'rb'))
-    except:
+    except telegram.TelegramError:
         bot.send_message(chat_id, 'Log is empty')
 
 
@@ -153,7 +153,7 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
 
     try:
         probe = ffmpeg.probe(input_file_url)
-    except:
+    except ffmpeg.Error:
         pass
 
     with io.BytesIO() as output_bytes:
@@ -406,7 +406,7 @@ def message_video_handler(update: telegram.Update, context: telegram.ext.Callbac
 
     try:
         probe = ffmpeg.probe(input_file_url)
-    except:
+    except ffmpeg.Error:
         pass
 
     with io.BytesIO() as output_bytes:
@@ -623,7 +623,7 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
 
     try:
         probe = ffmpeg.probe(input_file_url)
-    except:
+    except ffmpeg.Error:
         pass
 
     with io.BytesIO() as output_bytes:
