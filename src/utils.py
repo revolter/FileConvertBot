@@ -1,28 +1,22 @@
 # -*- coding: utf-8 -*-
 
+import io
 import json
 import logging
-
-from telegram import (
-    Chat, Update,
-    InlineKeyboardButton, InlineKeyboardMarkup
-)
-from telegram.ext import CallbackContext
+import typing
 
 import ffmpeg
+import telegram
+import telegram.ext
 
-from analytics import AnalyticsType
-from constants import (
-    MAX_VIDEO_NOTE_LENGTH,
-    VIDEO_NOTE_CROP_OFFSET_PARAMS, VIDEO_NOTE_CROP_SIZE_PARAMS,
-    OutputType
-)
+import analytics
+import constants
 
 logger = logging.getLogger(__name__)
 
 
-def check_admin(bot, message, analytics, admin_user_id):
-    analytics.track(AnalyticsType.COMMAND, message.from_user, message.text)
+def check_admin(bot: telegram.Bot, message: telegram.Message, analytics_handler: analytics.AnalyticsHandler, admin_user_id: int) -> bool:
+    analytics_handler.track(analytics.AnalyticsType.COMMAND, message.from_user, message.text)
 
     if not admin_user_id or message.from_user.id != admin_user_id:
         bot.send_message(message.chat_id, 'You are not allowed to use this command')
@@ -32,13 +26,13 @@ def check_admin(bot, message, analytics, admin_user_id):
     return True
 
 
-def ensure_size_under_limit(size, limit, update: Update, context: CallbackContext, file_reference_text='File'):
+def ensure_size_under_limit(size: int, limit: int, update: telegram.Update, context: telegram.ext.CallbackContext, file_reference_text='File') -> bool:
     if size <= limit:
         return True
 
     chat_type = update.effective_chat.type
 
-    if chat_type == Chat.PRIVATE:
+    if chat_type == telegram.Chat.PRIVATE:
         message = update.effective_message
         chat = update.effective_chat
 
@@ -58,13 +52,13 @@ def ensure_size_under_limit(size, limit, update: Update, context: CallbackContex
     return False
 
 
-def ensure_valid_converted_file(file_bytes, update: Update, context: CallbackContext):
+def ensure_valid_converted_file(file_bytes: typing.Optional[bytes], update: telegram.Update, context: telegram.ext.CallbackContext) -> bool:
     if file_bytes is not None:
         return True
 
     chat_type = update.effective_chat.type
 
-    if chat_type == Chat.PRIVATE:
+    if chat_type == telegram.Chat.PRIVATE:
         message = update.effective_message
         chat = update.effective_chat
 
@@ -80,12 +74,10 @@ def ensure_valid_converted_file(file_bytes, update: Update, context: CallbackCon
     return False
 
 
-def send_video(bot, chat_id, message_id, output_bytes, caption, chat_type):
-    if chat_type == Chat.PRIVATE:
-        data = {}
-
-        button = InlineKeyboardButton('Rounded', callback_data=json.dumps(data))
-        reply_markup = InlineKeyboardMarkup([[button]])
+def send_video(bot: telegram.Bot, chat_id: int, message_id: int, output_bytes: io.BytesIO, caption: typing.Optional[str], chat_type: str) -> None:
+    if chat_type == telegram.Chat.PRIVATE:
+        button = telegram.InlineKeyboardButton('Rounded', callback_data=json.dumps({}))
+        reply_markup = telegram.InlineKeyboardMarkup([[button]])
     else:
         reply_markup = None
 
@@ -99,7 +91,7 @@ def send_video(bot, chat_id, message_id, output_bytes, caption, chat_type):
     )
 
 
-def send_video_note(bot, chat_id, message_id, output_bytes):
+def send_video_note(bot: telegram.Bot, chat_id: int, message_id: int, output_bytes: io.BytesIO) -> None:
     bot.send_video_note(
         chat_id,
         output_bytes,
@@ -107,36 +99,39 @@ def send_video_note(bot, chat_id, message_id, output_bytes):
     )
 
 
-def get_file_size(video_url):
+def get_file_size(video_url: str) -> int:
     info = ffmpeg.probe(video_url, show_entries='format=size')
     size = info.get('format', {}).get('size')
 
     return int(size)
 
 
-def has_audio_stream(video_url):
+def has_audio_stream(video_url: typing.Optional[str]) -> bool:
+    if not video_url:
+        return False
+
     info = ffmpeg.probe(video_url, select_streams='a', show_entries='format=:streams=index')
     streams = info.get('streams', [])
 
     return len(streams) > 0
 
 
-def convert(output_type, input_video_url=None, input_audio_url=None):
+def convert(output_type: str, input_video_url: typing.Optional[str] = None, input_audio_url: typing.Optional[str] = None) -> typing.Optional[bytes]:
     try:
-        if output_type == OutputType.AUDIO:
+        if output_type == constants.OutputType.AUDIO:
             return (
                 ffmpeg
-                .input(input_audio_url)
-                .output('pipe:', format='opus', strict='-2')
-                .run(capture_stdout=True)
+                    .input(input_audio_url)
+                    .output('pipe:', format='opus', strict='-2')
+                    .run(capture_stdout=True)
             )[0]
-        elif output_type == OutputType.VIDEO:
+        elif output_type == constants.OutputType.VIDEO:
             if input_audio_url is None:
                 return (
                     ffmpeg
-                    .input(input_video_url)
-                    .output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
-                    .run(capture_stdout=True)
+                        .input(input_video_url)
+                        .output('pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
+                        .run(capture_stdout=True)
                 )[0]
             else:
                 input_video = ffmpeg.input(input_video_url)
@@ -144,25 +139,25 @@ def convert(output_type, input_video_url=None, input_audio_url=None):
 
                 return (
                     ffmpeg
-                    .output(input_video, input_audio, 'pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
-                    .run(capture_stdout=True)
+                        .output(input_video, input_audio, 'pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
+                        .run(capture_stdout=True)
                 )[0]
-        elif output_type == OutputType.VIDEO_NOTE:
+        elif output_type == constants.OutputType.VIDEO_NOTE:
             # Copied from https://github.com/kkroening/ffmpeg-python/issues/184#issuecomment-504390452.
 
             ffmpeg_input = (
                 ffmpeg
-                .input(input_video_url, t=MAX_VIDEO_NOTE_LENGTH)
+                    .input(input_video_url, t=constants.MAX_VIDEO_NOTE_LENGTH)
             )
             ffmpeg_input_video = (
                 ffmpeg_input
-                .video
-                .crop(
-                    VIDEO_NOTE_CROP_OFFSET_PARAMS,
-                    VIDEO_NOTE_CROP_OFFSET_PARAMS,
-                    VIDEO_NOTE_CROP_SIZE_PARAMS,
-                    VIDEO_NOTE_CROP_SIZE_PARAMS
-                )
+                    .video
+                    .crop(
+                        constants.VIDEO_NOTE_CROP_OFFSET_PARAMS,
+                        constants.VIDEO_NOTE_CROP_OFFSET_PARAMS,
+                        constants.VIDEO_NOTE_CROP_SIZE_PARAMS,
+                        constants.VIDEO_NOTE_CROP_SIZE_PARAMS
+                    )
             )
 
             ffmpeg_output: ffmpeg.nodes.OutputStream
@@ -176,26 +171,28 @@ def convert(output_type, input_video_url=None, input_audio_url=None):
                 ffmpeg_output = ffmpeg.output(ffmpeg_joined[0], 'pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
 
             return ffmpeg_output.run(capture_stdout=True)[0]
-        elif output_type == OutputType.FILE:
+        elif output_type == constants.OutputType.FILE:
             return (
                 ffmpeg
-                .input(input_audio_url)
-                .output('pipe:', format='mp3', strict='-2')
-                .run(capture_stdout=True)
+                    .input(input_audio_url)
+                    .output('pipe:', format='mp3', strict='-2')
+                    .run(capture_stdout=True)
             )[0]
-    except ffmpeg.Error:
-        return None
+    except ffmpeg.Error as error:
+        logger.error('ffmpeg error: {}'.format(error))
+
+    return None
 
 
-def get_size_string_from_bytes(bytes, suffix='B'):
+def get_size_string_from_bytes(bytes_count: int, suffix='B') -> str:
     """
     Partially copied from https://stackoverflow.com/a/1094933/865175.
     """
 
     for unit in ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']:
-        if abs(bytes) < 1000.0:
-            return '%3.1f %s%s' % (bytes, unit, suffix)
+        if abs(bytes_count) < 1000.0:
+            return '%3.1f %s%s' % (bytes_count, unit, suffix)
 
-        bytes /= 1000.0
+        converted_bytes_count = bytes_count / 1000.0
 
-    return '%.1f %s%s' % (bytes, 'Y', suffix)
+    return '%.1f %s%s' % (converted_bytes_count, 'Y', suffix)

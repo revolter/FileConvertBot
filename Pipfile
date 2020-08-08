@@ -14,6 +14,8 @@ youtube-dl = "*"
 
 [dev-packages]
 fabric = "*"
+invocations = "*"
+mypy = "*"
 
 [requires]
 python_version = "3.7"

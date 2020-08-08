@@ -1,38 +1,41 @@
 # -*- coding: utf-8 -*-
 
-from enum import Enum
-
+import enum
 import logging
-
-from telegram.ext.dispatcher import run_async
+import typing
 
 import requests
+import telegram.ext
 
-from constants import GOOGLE_HEADERS, GOOGLE_ANALYTICS_BASE_URL
+import constants
 
 logger = logging.getLogger(__name__)
 
 
-class AnalyticsType(Enum):
+class AnalyticsType(enum.Enum):
     COMMAND = 'command'
     MESSAGE = 'message'
 
 
-class Analytics:
-    def __init__(self):
-        self.googleToken = None
+class AnalyticsHandler:
+    def __init__(self) -> None:
+        self.googleToken: typing.Optional[str] = None
+        self.userAgent: typing.Optional[str] = None
 
-    def __google_track(self, analytics_type, user, data):
+    def __google_track(self, analytics_type: AnalyticsType, user: telegram.User, data: str) -> None:
         if not self.googleToken:
             return
 
-        url = GOOGLE_ANALYTICS_BASE_URL.format(self.googleToken, user.id, analytics_type.value, data)
+        url = constants.GOOGLE_ANALYTICS_BASE_URL.format(self.googleToken, user.id, analytics_type.value, data)
 
-        response = requests.get(url, headers=GOOGLE_HEADERS)
+        response = requests.get(url, headers={'User-Agent': self.userAgent or 'TelegramBot'})
 
         if response.status_code != 200:
             logger.error('Google analytics error: {}'.format(response.status_code))
 
-    @run_async
-    def track(self, analytics_type, user, data=''):
+    @telegram.ext.dispatcher.run_async
+    def track(self, analytics_type: AnalyticsType, user: telegram.User, data='') -> None:
+        if data is None:
+            data = ''
+
         self.__google_track(analytics_type, user, data)

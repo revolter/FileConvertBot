@@ -1,67 +1,67 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime
-from uuid import uuid4
+from __future__ import annotations
 
+import datetime
 import logging
+import typing
+import uuid
 
-from peewee import (
-    Model,
-    DateTimeField, TextField, BigIntegerField,
-    PeeweeException, SqliteDatabase
-)
-from peewee_migrate import Router
-from playhouse.sqlite_ext import RowIDField
+import peewee
+import peewee_migrate
+import playhouse.sqlite_ext
 
-from constants import GENERIC_DATE_TIME_FORMAT, EPOCH_DATE
+import constants
 
 logger = logging.getLogger(__name__)
 
-database = SqliteDatabase('file_convert.sqlite')
+database = peewee.SqliteDatabase('file_convert.sqlite')
 
 database.connect()
 
-router = Router(database, migrate_table='migration', logger=logger)
+router = peewee_migrate.Router(database, migrate_table='migration', logger=logger)
 
 
-def get_current_datetime():
-    return datetime.now().strftime(GENERIC_DATE_TIME_FORMAT)
+def get_current_datetime() -> str:
+    return datetime.datetime.now().strftime(constants.GENERIC_DATE_TIME_FORMAT)
 
 
-class BaseModel(Model):
-    rowid = RowIDField()
+class BaseModel(peewee.Model):
+    rowid = playhouse.sqlite_ext.RowIDField()
 
-    created_at = DateTimeField(default=get_current_datetime)
-    updated_at = DateTimeField()
+    created_at = peewee.DateTimeField(default=get_current_datetime)
+    updated_at = peewee.DateTimeField()
 
     class Meta:
         database = database
 
 
 class User(BaseModel):
-    id = TextField(primary_key=False, unique=True, default=uuid4)
-    telegram_id = BigIntegerField(unique=True)
-    telegram_username = TextField(null=True)
+    id = peewee.TextField(unique=True, default=uuid.uuid4)
+    telegram_id = peewee.BigIntegerField(unique=True)
+    telegram_username = peewee.TextField(null=True)
 
-    def get_markdown_description(self):
+    def get_markdown_description(self) -> str:
         username = '`@{}`'.format(self.telegram_username) if self.telegram_username else '-'
 
         return '{0.rowid}. | [{0.telegram_id}](tg://user?id={0.telegram_id}) | {1}'.format(self, username)
 
-    def get_created_at(self):
-        return self.created_at.strftime(GENERIC_DATE_TIME_FORMAT)
+    def get_created_at(self) -> str:
+        date = typing.cast(datetime.datetime, self.created_at)
 
-    def get_updated_ago(self):
+        return date.strftime(constants.GENERIC_DATE_TIME_FORMAT)
+
+    def get_updated_ago(self) -> str:
         if self.updated_at == self.created_at:
             return '-'
 
-        delta_seconds = round((datetime.now() - self.updated_at).total_seconds())
-        time_ago = str(datetime.fromtimestamp(delta_seconds) - EPOCH_DATE)
+        delta_seconds = round((datetime.datetime.now() - self.updated_at).total_seconds())
+        time_ago = str(datetime.datetime.fromtimestamp(delta_seconds) - constants.EPOCH_DATE)
 
         return '{} ago'.format(time_ago)
 
     @classmethod
-    def create_or_update_user(cls, id, username):
+    def create_or_update_user(cls, id: int, username: str) -> typing.Optional[User]:
         current_date_time = get_current_datetime()
 
         try:
@@ -80,13 +80,13 @@ class User(BaseModel):
 
             if is_created:
                 return db_user
-        except PeeweeException as error:
+        except peewee.PeeweeException as error:
             logger.error('Database error: "{}" for id: {} and username: {}'.format(error, id, username))
 
         return None
 
     @classmethod
-    def get_users_table(cls, sorted_by_updated_at=False):
+    def get_users_table(cls, sorted_by_updated_at=False) -> str:
         users_table = ''
 
         try:
@@ -100,15 +100,13 @@ class User(BaseModel):
             query = query.order_by(sort_field.desc()).limit(10)
 
             for user in reversed(query):
-                users_table = '{}\n{} | {} | {}'.format(
-                    users_table,
-
+                users_table += '\n{} | {} | {}'.format(
                     user.get_markdown_description(),
 
                     user.get_created_at(),
                     user.get_updated_ago()
                 )
-        except PeeweeException:
+        except peewee.PeeweeException:
             pass
 
         if not users_table:
