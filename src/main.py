@@ -175,21 +175,37 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
         invalid_format = None
 
         if message_type == 'voice':
-            output_type = constants.OutputType.FILE
+            output_type = constants.OutputType.AUDIO_FILE
 
-            mp3_bytes = utils.convert(output_type, input_audio_url=input_file_url)
+            webm_bytes = utils.convert(output_type, input_audio_url=input_file_url)
 
             if not utils.ensure_valid_converted_file(
-                file_bytes=mp3_bytes,
+                file_bytes=webm_bytes,
                 update=update,
                 context=context
             ):
                 return
 
-            if mp3_bytes is not None:
-                output_bytes.write(mp3_bytes)
+            if webm_bytes is not None:
+                output_bytes.write(webm_bytes)
 
-            output_bytes.name = 'voice.mp3'
+            output_bytes.name = 'voice.webm'
+        elif message_type == 'video':
+            output_type = constants.OutputType.VIDEO_FILE
+
+            webm_bytes = utils.convert(output_type, input_video_url=input_file_url)
+
+            if not utils.ensure_valid_converted_file(
+                file_bytes=webm_bytes,
+                update=update,
+                context=context
+            ):
+                return
+
+            if webm_bytes is not None:
+                output_bytes.write(webm_bytes)
+
+            output_bytes.name = 'video.webm'
         elif message_type == 'sticker':
             with io.BytesIO() as input_bytes:
                 input_file.download(out=input_bytes)
@@ -362,7 +378,7 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
             )
 
             return
-        elif output_type == constants.OutputType.FILE:
+        elif output_type in [constants.OutputType.AUDIO_FILE, constants.OutputType.VIDEO_FILE]:
             if not utils.ensure_size_under_limit(output_file_size, telegram.constants.MAX_FILESIZE_UPLOAD, update, context, file_reference_text='Converted file'):
                 return
 
@@ -732,6 +748,7 @@ def main() -> None:
     ) | (
         telegram.ext.Filters.private & (
             telegram.ext.Filters.voice |
+            telegram.ext.Filters.video |
             telegram.ext.Filters.sticker
         )
     )

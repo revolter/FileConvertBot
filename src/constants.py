@@ -23,9 +23,13 @@ VIDEO_NOTE_CROP_SIZE_PARAMS = 'min(in_w,in_h)'
 
 class OutputType:
     NONE = 'none'
+
     AUDIO = 'audio'
+    AUDIO_FILE = 'audio_file'
+
     VIDEO = 'video'
     VIDEO_NOTE = 'video_note'
+    VIDEO_FILE = 'video_file'
+
     PHOTO = 'photo'
     STICKER = 'sticker'
-    FILE = 'file'

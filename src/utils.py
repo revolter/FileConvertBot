@@ -124,6 +124,15 @@ def convert(output_type: str, input_video_url: typing.Optional[str] = None, inpu
                     .output('pipe:', format='opus', strict='-2')
                     .run(capture_stdout=True)
             )[0]
+        elif output_type == constants.OutputType.AUDIO_FILE:
+            return (
+                ffmpeg
+                .input(input_audio_url)
+                # .output('pipe:', format='mp3', strict='-2')
+                .output('pipe:', format='webm', strict='-2')
+                .run(capture_stdout=True)
+            )[0]
+        
         elif output_type == constants.OutputType.VIDEO:
             if input_audio_url is None:
                 return (
@@ -170,11 +179,11 @@ def convert(output_type: str, input_video_url: typing.Optional[str] = None, inpu
                 ffmpeg_output = ffmpeg.output(ffmpeg_joined[0], 'pipe:', format='mp4', movflags='frag_keyframe+empty_moov', strict='-2')
 
             return ffmpeg_output.run(capture_stdout=True)[0]
-        elif output_type == constants.OutputType.FILE:
+        elif output_type == constants.OutputType.VIDEO_FILE:
             return (
                 ffmpeg
-                    .input(input_audio_url)
-                    .output('pipe:', format='mp3', strict='-2')
+                    .input(input_video_url)
+                    .output('pipe:', format='webm', movflags='frag_keyframe+empty_moov', strict='-2')
                     .run(capture_stdout=True)
             )[0]
     except ffmpeg.Error as error:
