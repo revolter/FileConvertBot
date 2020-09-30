@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="Custom" pattern="file[FileConvertBot]:*.py||file[FileConvertBot]:*.cfg||file[FileConvertBot]:*.ini||file[FileConvertBot]:Pipfile||file[FileConvertBot]:README.md" />
+</component>
