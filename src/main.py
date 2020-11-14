@@ -222,7 +222,7 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
                     if codec_name is not None and codec_type == constants.VIDEO_CODED_TYPE:
                         invalid_format = codec_name
 
-                    if codec_name == 'mp3':
+                    if codec_name in constants.AUDIO_CODEC_NAMES:
                         output_type = constants.OutputType.AUDIO
 
                         opus_bytes = utils.convert(output_type, input_audio_url=input_file_url)

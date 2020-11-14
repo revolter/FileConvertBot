@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Telegram Bot that converts _(for now)_ OPUS, MP3 and WebM files to voice
+Telegram Bot that converts _(for now)_ AAC, OPUS, MP3 and WebM files to voice
 messages, HEVC and MP4 (MPEG4, VP6 and VP8) files to video messages or video
 notes (rounded ones), video messages to video notes (rounded ones), videos from
 some websites to video messages, PDF files to photo messages _(currently only

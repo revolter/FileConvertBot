@@ -15,6 +15,8 @@ EPOCH_DATE = datetime.datetime(1970, 1, 1)
 MAX_PHOTO_FILESIZE_UPLOAD = int(10E6)  # (50 MB)
 MAX_VIDEO_NOTE_LENGTH = 60
 
+AUDIO_CODEC_NAMES = ['aac', 'mp3']
+
 VIDEO_CODEC_NAMES = ['h264', 'hevc', 'mpeg4', 'vp6', 'vp8']
 VIDEO_CODED_TYPE = 'video'
 VIDEO_NOTE_CROP_OFFSET_PARAMS = 'abs(in_w-in_h)/2'
