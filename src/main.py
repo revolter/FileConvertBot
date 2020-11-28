@@ -54,7 +54,8 @@ def create_or_update_user(bot: telegram.Bot, user: telegram.User) -> None:
                 f'{telegram_utils.escape_v2_markdown_text(prefix)} '
                 f'{db_user.get_markdown_description()}'
             ),
-            parse_mode=telegram.ParseMode.MARKDOWN_V2
+            parse_mode=telegram.ParseMode.MARKDOWN_V2,
+            disable_notification=True
         )
 
 
