@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "FileConvertBot"
+version = "0.1.0"
+description = ""
+authors = ["Iulian Onofrei <iulian.onofrei@yahoo.com>"]
+license = "GNU"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+ffmpeg-python = "0.2.0"
+pdf2image = "1.13.1"
+peewee = "3.13.3"
+peewee-migrate = "1.1.6"
+python-telegram-bot = "12.8"
+requests = "2.24.0"
+youtube-dl = "2020.7.28"
+
+[tool.poetry.dev-dependencies]
+fabric = "2.5.0"
+invocations = "1.4.0"
+mypy = "0.782"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
