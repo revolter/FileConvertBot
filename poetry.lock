@@ -627,7 +627,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [[package]]
 name = "youtube-dl"
-version = "2020.7.28"
+version = "2020.11.29"
 description = "YouTube video downloader"
 category = "main"
 optional = false
@@ -636,7 +636,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "930c4c51e48db213945aeede6bd8f1f65fbc77cdc2b0afc288274961667c7e08"
+content-hash = "bc30fd8cc8deac5e7f5390f861ab019f702f7f6a3b13ecfa470e68df5bb4e766"
 
 [metadata.files]
 alabaster = [
@@ -1074,6 +1074,6 @@ urllib3 = [
     {file = "urllib3-1.25.11.tar.gz", hash = "sha256:8d7eaa5a82a1cac232164990f04874c594c9453ec55eef02eab885aa02fc17a2"},
 ]
 youtube-dl = [
-    {file = "youtube_dl-2020.7.28-py2.py3-none-any.whl", hash = "sha256:c1bf9a20b0bc8cf6489930b96b9830156e2a7e865fc96ef628e97fa37aad8de9"},
-    {file = "youtube_dl-2020.7.28.tar.gz", hash = "sha256:4af90dac41dba8b2c8bdce3903177c4ecbc27d75e03a3f08070f9d9decbae829"},
+    {file = "youtube_dl-2020.11.29-py2.py3-none-any.whl", hash = "sha256:ef2d60d5a963da54585fc80331fba46d15f45c0a89b85dbddc3b13c9cdc84e63"},
+    {file = "youtube_dl-2020.11.29.tar.gz", hash = "sha256:849d2a85ee99e5caafc8d52572bb603c4ae020dfb615a4d51c3bc90787d40df3"},
 ]

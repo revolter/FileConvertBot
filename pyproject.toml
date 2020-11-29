@@ -13,7 +13,7 @@ peewee = "3.13.3"
 peewee-migrate = "1.1.6"
 python-telegram-bot = "12.8"
 requests = "2.24.0"
-youtube-dl = "2020.7.28"
+youtube-dl = "*"
 
 [tool.poetry.dev-dependencies]
 fabric = "2.5.0"
