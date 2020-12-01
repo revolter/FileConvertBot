@@ -33,8 +33,8 @@ class GlobalConfig:
         'config.cfg'
     ]
     meta_filenames = [
-        'Pipfile',
-        'Pipfile.lock'
+        'pyproject.toml',
+        'poetry.lock'
     ]
     source_directories = [
         'migrations'
@@ -66,15 +66,16 @@ GlobalConfig.load()
 @fabric.task
 def configure(connection: fabric.Connection) -> None:
     connection.user = GlobalConfig.user
+    connection.inline_ssh_env = True
     connection.connect_kwargs.key_filename = GlobalConfig.key_filename
 
 
-@fabric.task(pre=[configure], hosts=[GlobalConfig.host], help={'command': 'The shell command to execute on the server'})
-def execute(connection: fabric.Connection, command: typing.Optional[str] = None) -> None:
+@fabric.task(pre=[configure], hosts=[GlobalConfig.host], help={'command': 'The shell command to execute on the server', 'env': 'An optional dictionary with environment variables'})
+def execute(connection: fabric.Connection, command: str, env: typing.Dict[str, str] = None) -> None:
     if not command:
         return
 
-    connection.run(command)
+    connection.run(command, env=env)
 
 
 @fabric.task(pre=[configure], hosts=[GlobalConfig.host])
@@ -94,7 +95,7 @@ def setup(connection: fabric.Connection) -> None:
     execute(connection, f'mkdir -p {GlobalConfig.project_path}/{GlobalConfig.project_name}')
     execute(connection, f'ln -s {GlobalConfig.project_path}/{GlobalConfig.project_name} {GlobalConfig.project_name}')
 
-    execute(connection, 'python -m pip install --user pipenv')
+    execute(connection, 'curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python')
 
 
 @fabric.task(pre=[configure], hosts=[GlobalConfig.host], help={'filename': 'An optional filename to deploy to the server'})
@@ -137,7 +138,9 @@ def deploy(connection: fabric.Connection, filename: typing.Optional[str] = None)
     upload(connection, filename)
 
     with connection.cd(GlobalConfig.project_name):
-        execute(connection, 'python -m pipenv install --three')
+        execute(connection, 'eval "$(pyenv init -)" && poetry install --no-dev', {
+            'PATH': '$HOME/.pyenv/bin:$HOME/.poetry/bin:$PATH'
+        })
 
 
 @fabric.task(pre=[configure], hosts=[GlobalConfig.host], help={'filename': 'The filename to backup locally from the server'})

@@ -36,10 +36,14 @@ cd /desired/location/path
 git clone https://github.com/revolter/FileConvertBot.git
 cd FileConvertBot
 
-brew install pipenv
-pipenv --three
-pipenv shell
-pipenv install
+curl https://pyenv.run | bash
+
+pyenv install 3.9.0
+pyenv global 3.9.0
+
+curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python3
+poetry shell
+poetry install
 
 cd src
 cp config_sample.cfg config.cfg
@@ -58,8 +62,7 @@ You can easily deploy this to a cloud machine using
 ```
 cd /project/location/path
 
-pipenv shell
-pipenv install --dev
+poetry shell
 
 cp fabfile_sample.cfg fabfile.cfg
 ```
@@ -73,7 +76,7 @@ fab deploy
 ```
 
 You can also deploy a single file using `fab deploy --filename=main.py` or `fab
-deploy --filename=Pipfile`.
+deploy --filename=pyproject.toml`.
 
 ## Dependencies
 
