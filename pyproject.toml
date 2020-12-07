@@ -7,7 +7,7 @@ license = "GNU"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-ffmpeg-python = "0.2.0"
+ffmpeg-python = "*"
 pdf2image = "1.13.1"
 peewee = "3.13.3"
 peewee-migrate = "1.1.6"
