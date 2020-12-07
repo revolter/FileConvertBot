@@ -17,7 +17,7 @@ youtube-dl = "*"
 
 [tool.poetry.dev-dependencies]
 fabric = "*"
-invocations = "1.4.0"
+invocations = "*"
 mypy = "*"
 
 [build-system]
