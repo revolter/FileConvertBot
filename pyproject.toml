@@ -16,7 +16,7 @@ requests = "2.24.0"
 youtube-dl = "*"
 
 [tool.poetry.dev-dependencies]
-fabric = "2.5.0"
+fabric = "*"
 invocations = "1.4.0"
 mypy = "*"
 
