@@ -12,7 +12,7 @@ pdf2image = "*"
 peewee = "*"
 peewee-migrate = "*"
 python-telegram-bot = "12.8"
-requests = "2.24.0"
+requests = "*"
 youtube-dl = "*"
 
 [tool.poetry.dev-dependencies]
