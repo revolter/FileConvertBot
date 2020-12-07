@@ -260,8 +260,8 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
                             output_bytes.write(mp4_bytes)
 
                         break
-                    else:
-                        continue
+
+                    continue
 
         if output_type == constants.OutputType.NONE:
             with io.BytesIO() as input_bytes:
@@ -450,8 +450,8 @@ def message_video_handler(update: telegram.Update, context: telegram.ext.Callbac
                         output_bytes.write(mp4_bytes)
 
                     break
-                else:
-                    continue
+
+                continue
 
         if output_type == constants.OutputType.NONE:
             if invalid_format is None:
@@ -668,8 +668,8 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
                         output_bytes.write(mp4_bytes)
 
                     break
-                else:
-                    continue
+
+                continue
 
         if output_type == constants.OutputType.NONE:
             if chat_type == telegram.Chat.PRIVATE:
