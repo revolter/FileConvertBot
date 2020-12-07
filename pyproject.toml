@@ -18,7 +18,7 @@ youtube-dl = "*"
 [tool.poetry.dev-dependencies]
 fabric = "2.5.0"
 invocations = "1.4.0"
-mypy = "0.782"
+mypy = "*"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
