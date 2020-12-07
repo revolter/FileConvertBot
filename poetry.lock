@@ -319,7 +319,7 @@ pillow = "*"
 
 [[package]]
 name = "peewee"
-version = "3.13.3"
+version = "3.14.0"
 description = "a little orm"
 category = "main"
 optional = false
@@ -636,7 +636,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "6e8fe7347df626a120d2f7b904c88ffe880f103ce6245836d32070acc10bf8b6"
+content-hash = "e0df16b0011bcdb69893afd332ba9a5a64eaaf8347b954bbca73753f0227b30a"
 
 [metadata.files]
 alabaster = [
@@ -858,7 +858,7 @@ pdf2image = [
     {file = "pdf2image-1.14.0.tar.gz", hash = "sha256:066527e1bf954762fb4369c677ae3bc15f2ce8707eee830cccef8471fde736d7"},
 ]
 peewee = [
-    {file = "peewee-3.13.3.tar.gz", hash = "sha256:1269a9736865512bd4056298003aab190957afe07d2616cf22eaf56cb6398369"},
+    {file = "peewee-3.14.0.tar.gz", hash = "sha256:59c5ef43877029b9133d87001dcc425525de231d1f983cece8828197fb4b84fa"},
 ]
 peewee-migrate = [
     {file = "peewee_migrate-1.1.6-py2.py3-none-any.whl", hash = "sha256:17c6340047ce4090eb352488c8a7ba991dd3cf253aeeb2232881ae45414cb2c5"},
