@@ -238,30 +238,40 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
                             output_bytes.write(mp4_bytes)
 
                         break
-                    elif codec_name in constants.AUDIO_CODEC_NAMES:
-                        output_type = constants.OutputType.AUDIO
-
-                        opus_bytes = utils.convert(output_type, input_audio_url=input_file_url)
-
-                        if not utils.ensure_valid_converted_file(
-                            file_bytes=opus_bytes,
-                            update=update,
-                            context=context
-                        ):
-                            return
-
-                        if opus_bytes is not None:
-                            output_bytes.write(opus_bytes)
-
-                        break
-                    elif codec_name == 'opus':
-                        input_file.download(out=output_bytes)
-
-                        output_type = constants.OutputType.AUDIO
-
-                        break
 
                     continue
+
+                if output_type == constants.OutputType.NONE:
+                    for stream in probe['streams']:
+                        codec_name = stream.get('codec_name')
+
+                        if codec_name is not None:
+                            invalid_format = codec_name
+
+                        if codec_name in constants.AUDIO_CODEC_NAMES:
+                            output_type = constants.OutputType.AUDIO
+
+                            opus_bytes = utils.convert(output_type, input_audio_url=input_file_url)
+
+                            if not utils.ensure_valid_converted_file(
+                                file_bytes=opus_bytes,
+                                update=update,
+                                context=context
+                            ):
+                                return
+
+                            if opus_bytes is not None:
+                                output_bytes.write(opus_bytes)
+
+                            break
+                        elif codec_name == 'opus':
+                            input_file.download(out=output_bytes)
+
+                            output_type = constants.OutputType.AUDIO
+
+                            break
+
+                        continue
 
         if output_type == constants.OutputType.NONE:
             with io.BytesIO() as input_bytes:
