@@ -218,9 +218,8 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
             if probe:
                 for stream in probe['streams']:
                     codec_name = stream.get('codec_name')
-                    codec_type = stream.get('codec_type')
 
-                    if codec_name is not None and codec_type == constants.VIDEO_CODED_TYPE:
+                    if codec_name is not None:
                         invalid_format = codec_name
 
                     if codec_name in constants.AUDIO_CODEC_NAMES:
@@ -431,9 +430,8 @@ def message_video_handler(update: telegram.Update, context: telegram.ext.Callbac
         if probe:
             for stream in probe['streams']:
                 codec_name = stream.get('codec_name')
-                codec_type = stream.get('codec_type')
 
-                if codec_name is not None and codec_type == constants.VIDEO_CODED_TYPE:
+                if codec_name is not None:
                     invalid_format = codec_name
 
                 if codec_name in constants.VIDEO_CODEC_NAMES:
@@ -648,9 +646,8 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
         if probe:
             for stream in probe['streams']:
                 codec_name = stream.get('codec_name')
-                codec_type = stream.get('codec_type')
 
-                if codec_name is not None and codec_type == constants.VIDEO_CODED_TYPE:
+                if codec_name is not None:
                     invalid_format = codec_name
 
                 if codec_name in constants.VIDEO_CODEC_NAMES:
