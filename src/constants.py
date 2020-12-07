@@ -18,7 +18,6 @@ MAX_VIDEO_NOTE_LENGTH = 60
 AUDIO_CODEC_NAMES = ['aac', 'mp3']
 
 VIDEO_CODEC_NAMES = ['h264', 'hevc', 'mpeg4', 'vp6', 'vp8']
-VIDEO_CODED_TYPE = 'video'
 VIDEO_NOTE_CROP_OFFSET_PARAMS = 'abs(in_w-in_h)/2'
 VIDEO_NOTE_CROP_SIZE_PARAMS = 'min(in_w,in_h)'
 
