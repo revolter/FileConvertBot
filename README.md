@@ -33,7 +33,7 @@ Clone the project and install the dependencies by running:
 
 ```sh
 cd /desired/location/path
-git clone https://github.com/revolter/FileConvertBot.git
+git clone https://github.com/kuanidonya/FileConvertBot.git
 cd FileConvertBot
 
 curl https://pyenv.run | bash
