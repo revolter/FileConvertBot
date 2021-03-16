@@ -547,6 +547,8 @@ def message_video_handler(update: telegram.Update, context: telegram.ext.Callbac
                 reply_to_message_id=message_id
             )
 
+            return
+
         output_bytes.seek(0)
 
         output_file_size = output_bytes.getbuffer().nbytes
