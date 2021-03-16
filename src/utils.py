@@ -14,10 +14,15 @@ import constants
 logger = logging.getLogger(__name__)
 
 
-def check_admin(bot: telegram.Bot, message: telegram.Message, analytics_handler: analytics.AnalyticsHandler, admin_user_id: int) -> bool:
-    analytics_handler.track(analytics.AnalyticsType.COMMAND, message.from_user, message.text)
+def check_admin(bot: telegram.Bot, context: telegram.ext.CallbackContext, message: telegram.Message, analytics_handler: analytics.AnalyticsHandler, admin_user_id: int) -> bool:
+    user = message.from_user
 
-    if not admin_user_id or message.from_user.id != admin_user_id:
+    if user is None:
+        return False
+
+    analytics_handler.track(context, analytics.AnalyticsType.COMMAND, user, message.text)
+
+    if user.id != admin_user_id:
         bot.send_message(message.chat_id, 'You are not allowed to use this command')
 
         return False
@@ -29,11 +34,18 @@ def ensure_size_under_limit(size: int, limit: int, update: telegram.Update, cont
     if size <= limit:
         return True
 
-    chat_type = update.effective_chat.type
+    chat = update.effective_chat
+
+    if chat is None:
+        return False
+
+    chat_type = chat.type
 
     if chat_type == telegram.Chat.PRIVATE:
         message = update.effective_message
-        chat = update.effective_chat
+
+        if message is None:
+            return False
 
         message_id = message.message_id
         chat_id = chat.id
@@ -55,11 +67,18 @@ def ensure_valid_converted_file(file_bytes: typing.Optional[bytes], update: tele
     if file_bytes is not None:
         return True
 
-    chat_type = update.effective_chat.type
+    chat = update.effective_chat
+
+    if chat is None:
+        return False
+
+    chat_type = chat.type
 
     if chat_type == telegram.Chat.PRIVATE:
         message = update.effective_message
-        chat = update.effective_chat
+
+        if message is None:
+            return False
 
         message_id = message.message_id
         chat_id = chat.id
@@ -74,11 +93,11 @@ def ensure_valid_converted_file(file_bytes: typing.Optional[bytes], update: tele
 
 
 def send_video(bot: telegram.Bot, chat_id: int, message_id: int, output_bytes: io.BytesIO, caption: typing.Optional[str], chat_type: str) -> None:
+    reply_markup: typing.Optional[telegram.ReplyMarkup] = None
+
     if chat_type == telegram.Chat.PRIVATE:
         button = telegram.InlineKeyboardButton('Rounded', callback_data=json.dumps({}))
         reply_markup = telegram.InlineKeyboardMarkup([[button]])
-    else:
-        reply_markup = None
 
     bot.send_video(
         chat_id,

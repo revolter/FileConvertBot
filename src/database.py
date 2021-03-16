@@ -79,7 +79,7 @@ class User(BaseModel):
         return f'{time_ago} ago'
 
     @classmethod
-    def create_or_update_user(cls, id: int, username: str) -> typing.Optional[User]:
+    def create_or_update_user(cls, id: int, username: typing.Optional[str]) -> typing.Optional[User]:
         current_date_time = get_current_datetime()
 
         try:
