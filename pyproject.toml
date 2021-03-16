@@ -11,7 +11,7 @@ ffmpeg-python = "*"
 pdf2image = "*"
 peewee = "*"
 peewee-migrate = "*"
-python-telegram-bot = "12.8"
+python-telegram-bot = "*"
 requests = "*"
 youtube-dl = "*"
 
