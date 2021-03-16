@@ -110,16 +110,7 @@ def upload(connection: fabric.Connection, filename: typing.Optional[str] = None)
             for file in files:
                 upload_file(f'src/{directory_name}/{{}}', file, f'{{.project_name}}/{directory_name}/{{}}')
 
-    if not filename:
-        for name in GlobalConfig.source_filenames:
-            upload_file('src/{}', name)
-
-        for name in GlobalConfig.meta_filenames:
-            upload_file('{}', name)
-
-        for directory in GlobalConfig.source_directories:
-            upload_directory(directory)
-    else:
+    if filename:
         if filename in GlobalConfig.source_directories:
             upload_directory(filename)
         else:
@@ -131,6 +122,15 @@ def upload(connection: fabric.Connection, filename: typing.Optional[str] = None)
                 raise invoke.ParseError(f'Filename "{filename}" is not registered')
 
             upload_file(file_path_format, filename)
+    else:
+        for name in GlobalConfig.source_filenames:
+            upload_file('src/{}', name)
+
+        for name in GlobalConfig.meta_filenames:
+            upload_file('{}', name)
+
+        for directory in GlobalConfig.source_directories:
+            upload_directory(directory)
 
 
 @fabric.task(pre=[configure], hosts=[GlobalConfig.host], help={'filename': 'An optional filename to deploy to the server'})
