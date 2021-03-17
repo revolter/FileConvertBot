@@ -61,23 +61,34 @@ def create_or_update_user(bot: telegram.Bot, user: telegram.User) -> None:
 
 def start_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     message = update.message
+
+    if message is None:
+        return
+
     bot = context.bot
 
     chat_id = message.chat_id
     user = message.from_user
 
+    if user is None:
+        return
+
     create_or_update_user(bot, user)
 
-    analytics_handler.track(analytics.AnalyticsType.COMMAND, user, '/start')
+    analytics_handler.track(context, analytics.AnalyticsType.COMMAND, user, '/start')
 
     bot.send_message(chat_id, 'Send me a file to try to convert it to something better.')
 
 
 def restart_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     message = update.message
+
+    if message is None:
+        return
+
     bot = context.bot
 
-    if not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
+    if not utils.check_admin(bot, context, message, analytics_handler, ADMIN_USER_ID):
         return
 
     bot.send_message(message.chat_id, 'Restarting...')
@@ -87,11 +98,15 @@ def restart_command_handler(update: telegram.Update, context: telegram.ext.Callb
 
 def logs_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     message = update.message
+
+    if message is None:
+        return
+
     bot = context.bot
 
     chat_id = message.chat_id
 
-    if not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
+    if not utils.check_admin(bot, context, message, analytics_handler, ADMIN_USER_ID):
         return
 
     try:
@@ -102,33 +117,48 @@ def logs_command_handler(update: telegram.Update, context: telegram.ext.Callback
 
 def users_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     message = update.message
+
+    if message is None:
+        return
+
     bot = context.bot
 
     chat_id = message.chat_id
 
-    if not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
+    if not utils.check_admin(bot, context, message, analytics_handler, ADMIN_USER_ID):
         return
+
+    args = context.args or []
 
     bot.send_message(
         chat_id=chat_id,
-        text=database.User.get_users_table('updated' in context.args),
+        text=database.User.get_users_table('updated' in args),
         parse_mode=telegram.ParseMode.MARKDOWN_V2
     )
 
 
 def message_file_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     message = update.effective_message
-    chat_type = update.effective_chat.type
+    chat = update.effective_chat
+
+    if chat is None:
+        return
+
+    chat_type = chat.type
     bot = context.bot
 
-    if cli_args.debug and not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
+    if message is None:
+        return
+
+    if cli_args.debug and not utils.check_admin(bot, context, message, analytics_handler, ADMIN_USER_ID):
         return
 
     message_id = message.message_id
     chat_id = message.chat.id
     attachment = message.effective_attachment
 
-    message_type = telegram.utils.helpers.effective_message_type(message)
+    if attachment is None:
+        return
 
     if type(attachment) is list:
         if chat_type == telegram.Chat.PRIVATE:
@@ -140,7 +170,22 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
 
         return
 
-    if not utils.ensure_size_under_limit(attachment.file_size, telegram.constants.MAX_FILESIZE_DOWNLOAD, update, context):
+    if not isinstance(attachment, (
+        telegram.Audio,
+        telegram.Document,
+        telegram.Voice,
+        telegram.Sticker
+    )):
+        return
+
+    message_type = telegram.utils.helpers.effective_message_type(message)
+
+    file_size = attachment.file_size
+
+    if file_size is None:
+        return
+
+    if not utils.ensure_size_under_limit(file_size, telegram.constants.MAX_FILESIZE_DOWNLOAD, update, context):
         return
 
     user = message.from_user
@@ -148,14 +193,16 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
     input_file_id = attachment.file_id
     input_file_name = None
 
-    if getattr(attachment, 'file_name', None):
+    if isinstance(attachment, (telegram.Audio, telegram.Document)):
         input_file_name = attachment.file_name
-    elif getattr(attachment, 'title', None):
-        input_file_name = attachment.title
 
-    create_or_update_user(bot, user)
+        if input_file_name is None and isinstance(attachment, telegram.Audio):
+            input_file_name = attachment.title
 
-    analytics_handler.track(analytics.AnalyticsType.MESSAGE, user)
+    if user is not None:
+        create_or_update_user(bot, user)
+
+        analytics_handler.track(context, analytics.AnalyticsType.MESSAGE, user)
 
     if chat_type == telegram.Chat.PRIVATE:
         bot.send_chat_action(chat_id, telegram.ChatAction.TYPING)
@@ -311,8 +358,14 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
 
         if output_type == constants.OutputType.NONE:
             if chat_type == telegram.Chat.PRIVATE:
-                if invalid_format is None:
-                    invalid_format = os.path.splitext(input_file_url)[1][1:]
+                if invalid_format is None and input_file_url is not None:
+                    parts = os.path.splitext(input_file_url)
+
+                    if parts is not None and len(parts) >= 2:
+                        extension = parts[1]
+
+                        if extension is not None:
+                            invalid_format = extension[1:]
 
                 bot.send_message(
                     chat_id=chat_id,
@@ -396,29 +449,44 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
 
 def message_video_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     message = update.effective_message
-    chat_type = update.effective_chat.type
+
+    if message is None:
+        return
+
+    chat = update.effective_chat
+
+    if chat is None:
+        return
+
+    chat_type = chat.type
     bot = context.bot
 
     if chat_type != telegram.Chat.PRIVATE:
         return
 
-    if cli_args.debug and not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
+    if cli_args.debug and not utils.check_admin(bot, context, message, analytics_handler, ADMIN_USER_ID):
         return
 
     message_id = message.message_id
     chat_id = message.chat.id
     attachment = message.video
 
-    if not utils.ensure_size_under_limit(attachment.file_size, telegram.constants.MAX_FILESIZE_DOWNLOAD, update, context):
+    if attachment is None:
+        return
+
+    file_size = attachment.file_size
+
+    if file_size is not None and not utils.ensure_size_under_limit(file_size, telegram.constants.MAX_FILESIZE_DOWNLOAD, update, context):
         return
 
     user = update.effective_user
 
     input_file_id = attachment.file_id
 
-    create_or_update_user(bot, user)
+    if user is not None:
+        create_or_update_user(bot, user)
 
-    analytics_handler.track(analytics.AnalyticsType.MESSAGE, user)
+        analytics_handler.track(context, analytics.AnalyticsType.MESSAGE, user)
 
     bot.send_chat_action(chat_id, telegram.ChatAction.TYPING)
 
@@ -464,14 +532,22 @@ def message_video_handler(update: telegram.Update, context: telegram.ext.Callbac
                 continue
 
         if output_type == constants.OutputType.NONE:
-            if invalid_format is None:
-                invalid_format = os.path.splitext(input_file_url)[1][1:]
+            if invalid_format is None and input_file_url is not None:
+                parts = os.path.splitext(input_file_url)
+
+                if parts is not None and len(parts) >= 2:
+                    extension = parts[1]
+
+                    if extension is not None:
+                        invalid_format = extension[1:]
 
             bot.send_message(
                 chat_id=chat_id,
                 text=f'File type "{invalid_format}" is not yet supported.',
                 reply_to_message_id=message_id
             )
+
+            return
 
         output_bytes.seek(0)
 
@@ -496,10 +572,19 @@ def message_video_handler(update: telegram.Update, context: telegram.ext.Callbac
 
 def message_text_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     message = update.effective_message
-    chat_type = update.effective_chat.type
+
+    if message is None:
+        return
+
+    chat = update.effective_chat
+
+    if chat is None:
+        return
+
+    chat_type = chat.type
     bot = context.bot
 
-    if cli_args.debug and not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
+    if cli_args.debug and not utils.check_admin(bot, context, message, analytics_handler, ADMIN_USER_ID):
         return
 
     message_id = message.message_id
@@ -507,9 +592,10 @@ def message_text_handler(update: telegram.Update, context: telegram.ext.Callback
     user = message.from_user
     entities = message.parse_entities()
 
-    create_or_update_user(bot, user)
+    if user is not None:
+        create_or_update_user(bot, user)
 
-    analytics_handler.track(analytics.AnalyticsType.MESSAGE, user)
+        analytics_handler.track(context, analytics.AnalyticsType.MESSAGE, user)
 
     valid_entities = {
         entity: text for entity, text in entities.items() if entity.type in [telegram.MessageEntity.URL, telegram.MessageEntity.TEXT_LINK]
@@ -608,7 +694,18 @@ def message_text_handler(update: telegram.Update, context: telegram.ext.Callback
 
 def message_answer_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     callback_query = update.callback_query
-    callback_data = json.loads(callback_query.data)
+
+    if callback_query is None:
+        return
+
+    raw_callback_data = callback_query.data
+
+    if raw_callback_data is None:
+        callback_query.answer()
+
+        return
+
+    callback_data = json.loads(raw_callback_data)
 
     if callback_data is None:
         callback_query.answer()
@@ -616,12 +713,29 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
         return
 
     message = update.effective_message
-    chat_type = update.effective_chat.type
+
+    if message is None:
+        return
+
+    chat = update.effective_chat
+
+    if chat is None:
+        return
+
+    chat_type = chat.type
     bot = context.bot
 
     attachment = message.effective_attachment
 
-    if not utils.ensure_size_under_limit(attachment.file_size, telegram.constants.MAX_FILESIZE_DOWNLOAD, update, context):
+    if attachment is None:
+        return
+
+    if not isinstance(attachment, telegram.Video):
+        return
+
+    file_size = attachment.file_size
+
+    if file_size is not None and not utils.ensure_size_under_limit(file_size, telegram.constants.MAX_FILESIZE_DOWNLOAD, update, context):
         return
 
     attachment_file_id = attachment.file_id
@@ -631,9 +745,10 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
 
     user = update.effective_user
 
-    create_or_update_user(bot, user)
+    if user is not None:
+        create_or_update_user(bot, user)
 
-    analytics_handler.track(analytics.AnalyticsType.MESSAGE, user)
+        analytics_handler.track(context, analytics.AnalyticsType.MESSAGE, user)
 
     if chat_type == telegram.Chat.PRIVATE:
         bot.send_chat_action(chat_id, telegram.ChatAction.TYPING)
@@ -683,8 +798,14 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
 
         if output_type == constants.OutputType.NONE:
             if chat_type == telegram.Chat.PRIVATE:
-                if invalid_format is None:
-                    invalid_format = os.path.splitext(input_file_url)[1][1:]
+                if invalid_format is None and input_file_url is not None:
+                    parts = os.path.splitext(input_file_url)
+
+                    if parts is not None and len(parts) >= 2:
+                        extension = parts[1]
+
+                        if extension is not None:
+                            invalid_format = extension[1:]
 
                 bot.send_message(
                     chat_id=chat_id,
@@ -724,8 +845,10 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
     callback_query.answer()
 
 
-def error_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
-    logger.error(f'Update "{json.dumps(update.to_dict(), indent=4)}" caused error "{context.error}"')
+def error_handler(update: object, context: telegram.ext.CallbackContext) -> None:
+    update_str = update.to_dict() if isinstance(update, telegram.Update) else str(update)
+
+    logger.error(f'Update "{json.dumps(update_str, indent=4, ensure_ascii=False)}" caused error "{context.error}"')
 
 
 def main() -> None:
@@ -738,20 +861,22 @@ def main() -> None:
             ~ telegram.ext.Filters.animation
         )
     ) | (
-        telegram.ext.Filters.private & (
+        telegram.ext.Filters.chat_type.private & (
             telegram.ext.Filters.voice |
             telegram.ext.Filters.sticker
         )
     )
 
     message_text_filters = (
-        telegram.ext.Filters.private & (
+        telegram.ext.Filters.chat_type.private & (
             telegram.ext.Filters.text & (
                 telegram.ext.Filters.entity(telegram.MessageEntity.URL) |
                 telegram.ext.Filters.entity(telegram.MessageEntity.TEXT_LINK)
             )
         )
     )
+
+    video_filter = telegram.ext.Filters.video
 
     dispatcher = updater.dispatcher
 
@@ -762,7 +887,7 @@ def main() -> None:
     dispatcher.add_handler(telegram.ext.CommandHandler('users', users_command_handler, pass_args=True))
 
     dispatcher.add_handler(telegram.ext.MessageHandler(message_file_filters, message_file_handler))
-    dispatcher.add_handler(telegram.ext.MessageHandler(telegram.ext.Filters.video, message_video_handler))
+    dispatcher.add_handler(telegram.ext.MessageHandler(video_filter, message_video_handler))
     dispatcher.add_handler(telegram.ext.MessageHandler(message_text_filters, message_text_handler))
     dispatcher.add_handler(telegram.ext.CallbackQueryHandler(message_answer_handler))
 
@@ -787,7 +912,7 @@ def main() -> None:
                 if cli_args.set_webhook:
                     logger.info('Updated webhook')
                 else:
-                    updater.bot.set_webhook = (lambda *args, **kwargs: None)
+                    setattr(updater.bot, 'set_webhook', (lambda *args, **kwargs: False))
 
                 updater.start_webhook(
                     listen='0.0.0.0',
@@ -845,7 +970,7 @@ if __name__ == '__main__':
 
         sys.exit(2)
 
-    updater = telegram.ext.Updater(BOT_TOKEN, use_context=True)
+    updater = telegram.ext.Updater(BOT_TOKEN)
     analytics_handler = analytics.AnalyticsHandler()
 
     try:

@@ -33,9 +33,8 @@ class AnalyticsHandler:
         if response.status_code != 200:
             logger.error(f'Google analytics error: {response.status_code}')
 
-    @telegram.ext.dispatcher.run_async
-    def track(self, analytics_type: AnalyticsType, user: telegram.User, data='') -> None:
+    def track(self, context: telegram.ext.CallbackContext, analytics_type: AnalyticsType, user: telegram.User, data='') -> None:
         if data is None:
             data = ''
 
-        self.__google_track(analytics_type, user, data)
+        context.dispatcher.run_async(self.__google_track, analytics_type, user, data)
