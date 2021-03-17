@@ -886,10 +886,10 @@ def main() -> None:
     dispatcher.add_handler(telegram.ext.CommandHandler('logs', logs_command_handler))
     dispatcher.add_handler(telegram.ext.CommandHandler('users', users_command_handler, pass_args=True))
 
-    dispatcher.add_handler(telegram.ext.MessageHandler(message_file_filters, message_file_handler))
-    dispatcher.add_handler(telegram.ext.MessageHandler(video_filter, message_video_handler))
-    dispatcher.add_handler(telegram.ext.MessageHandler(message_text_filters, message_text_handler))
-    dispatcher.add_handler(telegram.ext.CallbackQueryHandler(message_answer_handler))
+    dispatcher.add_handler(telegram.ext.MessageHandler(message_file_filters, message_file_handler, run_async=True))
+    dispatcher.add_handler(telegram.ext.MessageHandler(video_filter, message_video_handler, run_async=True))
+    dispatcher.add_handler(telegram.ext.MessageHandler(message_text_filters, message_text_handler, run_async=True))
+    dispatcher.add_handler(telegram.ext.CallbackQueryHandler(message_answer_handler, run_async=True))
 
     if cli_args.debug:
         logger.info('Started polling')
