@@ -29,7 +29,21 @@ You need to install [Homebrew](https://brew.sh) by running:
 
 ### Installing
 
-Clone the project and install the dependencies by running:
+Install the global dependencies by running:
+
+```sh
+sudo apt install ffmpeg poppler-utils
+```
+
+on Linux or
+
+```sh
+brew install ffmpeg poppler
+```
+
+on macOS.
+
+Then clone the project and install the dependencies by running:
 
 ```sh
 cd /desired/location/path
