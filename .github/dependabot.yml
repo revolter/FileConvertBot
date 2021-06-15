@@ -1,0 +1,29 @@
+# https://docs.github.com/en/github/administering-a-repository/configuration-options-for-dependency-updates
+
+version: 2
+updates:
+- package-ecosystem: pip
+  directory: '/'
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 1
+  reviewers:
+    - revolter
+  assignees:
+    - revolter
+  ignore:
+    - dependency-name: '*'
+      update-types: ['version-update:semver-patch']
+
+- package-ecosystem: github-actions
+  directory: '/'
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 1
+  reviewers:
+    - revolter
+  assignees:
+    - revolter
+  ignore:
+    - dependency-name: '*'
+      update-types: ['version-update:semver-patch']
