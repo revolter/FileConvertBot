@@ -386,7 +386,7 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
             if not utils.ensure_size_under_limit(output_file_size, telegram.constants.MAX_FILESIZE_UPLOAD, update, context, file_reference_text='Converted file'):
                 return
 
-            bot.send_chat_action(chat_id, telegram.ChatAction.UPLOAD_AUDIO)
+            bot.send_chat_action(chat_id, telegram.ChatAction.UPLOAD_VOICE)
 
             bot.send_voice(
                 chat_id,
