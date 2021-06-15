@@ -138,7 +138,7 @@ def deploy(connection: fabric.Connection, filename: typing.Optional[str] = None)
     upload(connection, filename)
 
     with connection.cd(GlobalConfig.project_name):
-        execute(connection, 'eval "$(pyenv init -)" && poetry install --no-dev', {
+        execute(connection, 'eval "$(pyenv init --path)" && poetry install --no-dev', {
             'PATH': '$HOME/.pyenv/bin:$HOME/.poetry/bin:$PATH'
         })
 
