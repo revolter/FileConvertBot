@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout 🛎
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v2.4.0
         with:
           token: ${{ secrets.PAT_TOKEN }}
           fetch-depth: 0
