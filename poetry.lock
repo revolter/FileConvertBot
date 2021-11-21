@@ -645,18 +645,10 @@ brotli = ["brotlipy (>=0.6.0)"]
 secure = ["pyOpenSSL (>=0.14)", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "certifi", "ipaddress"]
 socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
-[[package]]
-name = "youtube-dl"
-version = "2021.3.14"
-description = "YouTube video downloader"
-category = "main"
-optional = false
-python-versions = "*"
-
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "85eda14f536d09999928563f956da85b7c0a2aa8ddd6de11009c3eaa40c287ac"
+content-hash = "7fc6080da1fe494e99fea69491f644ab71c6b555c26b8d119f736840c3bb7746"
 
 [metadata.files]
 alabaster = [
@@ -1131,8 +1123,4 @@ tzlocal = [
 urllib3 = [
     {file = "urllib3-1.26.5-py2.py3-none-any.whl", hash = "sha256:753a0374df26658f99d826cfe40394a686d05985786d946fbe4165b5148f5a7c"},
     {file = "urllib3-1.26.5.tar.gz", hash = "sha256:a7acd0977125325f516bda9735fa7142b909a8d01e8b2e4c8108d0984e6e0098"},
-]
-youtube-dl = [
-    {file = "youtube_dl-2021.3.14-py2.py3-none-any.whl", hash = "sha256:d414166efe52447877db06803816277f52f405faeee2bdf5ef816b30e352b3b8"},
-    {file = "youtube_dl-2021.3.14.tar.gz", hash = "sha256:c287ad8dd33471aabaabab5ab1dd825bebc70eb8b83ebfa93fd71022e01a1d08"},
 ]
