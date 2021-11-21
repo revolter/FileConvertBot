@@ -13,7 +13,7 @@ peewee = "*"
 peewee-migrate = "*"
 python-telegram-bot = "*"
 requests = "*"
-youtube-dl = "*"
+yt-dlp = "*"
 
 [tool.poetry.dev-dependencies]
 fabric = "*"
