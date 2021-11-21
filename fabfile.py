@@ -95,7 +95,7 @@ def setup(connection: fabric.Connection) -> None:
     execute(connection, f'mkdir -p {GlobalConfig.project_path}/{GlobalConfig.project_name}')
     execute(connection, f'ln -s {GlobalConfig.project_path}/{GlobalConfig.project_name} {GlobalConfig.project_name}')
 
-    execute(connection, 'curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python')
+    execute(connection, 'curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -')
 
 
 @fabric.task(pre=[configure], hosts=[GlobalConfig.host], help={'filename': 'An optional filename to deploy to the server'})
