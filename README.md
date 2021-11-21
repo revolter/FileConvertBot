@@ -57,7 +57,7 @@ sudo apt install make build-essential libssl-dev zlib1g-dev libbz2-dev libreadli
 pyenv install 3.9.0
 pyenv global 3.9.0
 
-curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+curl -sSL https://install.python-poetry.org | python -
 poetry shell
 poetry install
 
