@@ -13,12 +13,14 @@ GENERIC_DATE_TIME_FORMAT = f'{GENERIC_DATE_FORMAT} %H:%M:%S'
 EPOCH_DATE = datetime.datetime(1970, 1, 1)
 
 MAX_VIDEO_NOTE_LENGTH = 60
+MAX_VIDEO_NOTE_SIZE = 638
 
 AUDIO_CODEC_NAMES = ['aac', 'mp3']
 
 VIDEO_CODEC_NAMES = ['h264', 'hevc', 'mpeg4', 'vp6', 'vp8']
-VIDEO_NOTE_CROP_OFFSET_PARAMS = 'abs(in_w - in_h) / 2'
-VIDEO_NOTE_CROP_SIZE_PARAMS = 'min(in_w, in_h)'
+VIDEO_NOTE_CROP_HORIZONTAL_OFFSET_PARAMS = 'abs(in_w - min(min(in_w, in_h), {})) / 2'.format(MAX_VIDEO_NOTE_SIZE)
+VIDEO_NOTE_CROP_VERTICAL_OFFSET_PARAMS = 'abs(in_h - min(min(in_w, in_h), {})) / 2'.format(MAX_VIDEO_NOTE_SIZE)
+VIDEO_NOTE_CROP_SIZE_PARAMS = 'min(min(in_w, in_h), {})'.format(MAX_VIDEO_NOTE_SIZE)
 
 
 class OutputType:
