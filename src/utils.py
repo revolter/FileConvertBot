@@ -176,6 +176,11 @@ def convert(output_type: str, input_video_url: typing.Optional[str] = None, inpu
                         constants.VIDEO_NOTE_CROP_SIZE_PARAMS,
                         constants.VIDEO_NOTE_CROP_SIZE_PARAMS
                     )
+                    .filter(
+                        'scale',
+                        constants.VIDEO_NOTE_SCALE_SIZE_PARAMS,
+                        constants.VIDEO_NOTE_SCALE_SIZE_PARAMS
+                    )
             )
 
             ffmpeg_output: ffmpeg.nodes.OutputStream

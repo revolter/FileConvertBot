@@ -20,6 +20,7 @@ AUDIO_CODEC_NAMES = ['aac', 'mp3']
 VIDEO_CODEC_NAMES = ['h264', 'hevc', 'mpeg4', 'vp6', 'vp8']
 VIDEO_NOTE_CROP_OFFSET_PARAMS = 'abs(in_w - in_h) / 2'
 VIDEO_NOTE_CROP_SIZE_PARAMS = 'min(in_w, in_h)'
+VIDEO_NOTE_SCALE_SIZE_PARAMS = 'min(min(in_w, in_h), {})'.format(MAX_VIDEO_NOTE_SIZE)
 
 
 class OutputType:
