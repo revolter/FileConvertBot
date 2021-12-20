@@ -406,7 +406,7 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
 
             return
         elif output_type == constants.OutputType.PHOTO:
-            if not utils.ensure_size_under_limit(output_file_size, constants.MAX_PHOTO_FILESIZE_UPLOAD, update, context, file_reference_text='Converted file'):
+            if not utils.ensure_size_under_limit(output_file_size, telegram.constants.MAX_PHOTOSIZE_UPLOAD, update, context, file_reference_text='Converted file'):
                 return
 
             bot.send_photo(
