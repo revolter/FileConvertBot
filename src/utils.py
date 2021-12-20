@@ -171,8 +171,8 @@ def convert(output_type: str, input_video_url: typing.Optional[str] = None, inpu
                 ffmpeg_input
                     .video
                     .crop(
-                        constants.VIDEO_NOTE_CROP_OFFSET_PARAMS,
-                        constants.VIDEO_NOTE_CROP_OFFSET_PARAMS,
+                        constants.VIDEO_NOTE_CROP_HORIZONTAL_OFFSET_PARAMS,
+                        constants.VIDEO_NOTE_CROP_VERTICAL_OFFSET_PARAMS,
                         constants.VIDEO_NOTE_CROP_SIZE_PARAMS,
                         constants.VIDEO_NOTE_CROP_SIZE_PARAMS
                     )
