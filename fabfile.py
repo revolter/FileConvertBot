@@ -25,7 +25,6 @@ class GlobalConfig:
         'database.py',
         'utils.py',
         'telegram_utils.py',
-        'analytics.py',
         'constants.py',
 
         'custom_logger.py',
