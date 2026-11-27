@@ -8,19 +8,16 @@ import typing
 import ffmpeg
 import telegram.ext
 
-import analytics
 import constants
 
 logger = logging.getLogger(__name__)
 
 
-def check_admin(bot: telegram.Bot, context: telegram.ext.CallbackContext, message: telegram.Message, analytics_handler: analytics.AnalyticsHandler, admin_user_id: int) -> bool:
+def check_admin(bot: telegram.Bot, message: telegram.Message, admin_user_id: int) -> bool:
     user = message.from_user
 
     if user is None:
         return False
-
-    analytics_handler.track(context, analytics.AnalyticsType.COMMAND, user, message.text)
 
     if user.id != admin_user_id:
         bot.send_message(message.chat_id, 'You are not allowed to use this command')

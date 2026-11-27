@@ -18,7 +18,6 @@ import telegram.utils.helpers
 import telegram_utils
 import yt_dlp as youtube_dl
 
-import analytics
 import constants
 import custom_logger
 import database
@@ -34,7 +33,6 @@ BOT_TOKEN: str
 ADMIN_USER_ID: int
 
 updater: telegram.ext.Updater
-analytics_handler: analytics.AnalyticsHandler
 
 
 def stop_and_restart() -> None:
@@ -75,8 +73,6 @@ def start_command_handler(update: telegram.Update, context: telegram.ext.Callbac
 
     create_or_update_user(bot, user)
 
-    analytics_handler.track(context, analytics.AnalyticsType.COMMAND, user, '/start')
-
     bot.send_message(chat_id, 'Send me a file to try to convert it to something better.')
 
 
@@ -88,7 +84,7 @@ def restart_command_handler(update: telegram.Update, context: telegram.ext.Callb
 
     bot = context.bot
 
-    if not utils.check_admin(bot, context, message, analytics_handler, ADMIN_USER_ID):
+    if not utils.check_admin(bot, message, ADMIN_USER_ID):
         return
 
     bot.send_message(message.chat_id, 'Restarting...')
@@ -106,7 +102,7 @@ def logs_command_handler(update: telegram.Update, context: telegram.ext.Callback
 
     chat_id = message.chat_id
 
-    if not utils.check_admin(bot, context, message, analytics_handler, ADMIN_USER_ID):
+    if not utils.check_admin(bot, message, ADMIN_USER_ID):
         return
 
     try:
@@ -125,7 +121,7 @@ def users_command_handler(update: telegram.Update, context: telegram.ext.Callbac
 
     chat_id = message.chat_id
 
-    if not utils.check_admin(bot, context, message, analytics_handler, ADMIN_USER_ID):
+    if not utils.check_admin(bot, message, ADMIN_USER_ID):
         return
 
     args = context.args or []
@@ -150,7 +146,7 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
     if message is None:
         return
 
-    if cli_args.debug and not utils.check_admin(bot, context, message, analytics_handler, ADMIN_USER_ID):
+    if cli_args.debug and not utils.check_admin(bot, message, ADMIN_USER_ID):
         return
 
     message_id = message.message_id
@@ -201,8 +197,6 @@ def message_file_handler(update: telegram.Update, context: telegram.ext.Callback
 
     if user is not None:
         create_or_update_user(bot, user)
-
-        analytics_handler.track(context, analytics.AnalyticsType.MESSAGE, user)
 
     if chat_type == telegram.Chat.PRIVATE:
         bot.send_chat_action(chat_id, telegram.ChatAction.TYPING)
@@ -464,7 +458,7 @@ def message_video_handler(update: telegram.Update, context: telegram.ext.Callbac
     if chat_type != telegram.Chat.PRIVATE:
         return
 
-    if cli_args.debug and not utils.check_admin(bot, context, message, analytics_handler, ADMIN_USER_ID):
+    if cli_args.debug and not utils.check_admin(bot, message, ADMIN_USER_ID):
         return
 
     message_id = message.message_id
@@ -485,8 +479,6 @@ def message_video_handler(update: telegram.Update, context: telegram.ext.Callbac
 
     if user is not None:
         create_or_update_user(bot, user)
-
-        analytics_handler.track(context, analytics.AnalyticsType.MESSAGE, user)
 
     bot.send_chat_action(chat_id, telegram.ChatAction.TYPING)
 
@@ -584,7 +576,7 @@ def message_text_handler(update: telegram.Update, context: telegram.ext.Callback
     chat_type = chat.type
     bot = context.bot
 
-    if cli_args.debug and not utils.check_admin(bot, context, message, analytics_handler, ADMIN_USER_ID):
+    if cli_args.debug and not utils.check_admin(bot, message, ADMIN_USER_ID):
         return
 
     message_id = message.message_id
@@ -594,8 +586,6 @@ def message_text_handler(update: telegram.Update, context: telegram.ext.Callback
 
     if user is not None:
         create_or_update_user(bot, user)
-
-        analytics_handler.track(context, analytics.AnalyticsType.MESSAGE, user)
 
     valid_entities = {
         entity: text for entity, text in entities.items() if entity.type in [telegram.MessageEntity.URL, telegram.MessageEntity.TEXT_LINK]
@@ -747,8 +737,6 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
 
     if user is not None:
         create_or_update_user(bot, user)
-
-        analytics_handler.track(context, analytics.AnalyticsType.MESSAGE, user)
 
     if chat_type == telegram.Chat.PRIVATE:
         bot.send_chat_action(chat_id, telegram.ChatAction.TYPING)
@@ -971,16 +959,10 @@ if __name__ == '__main__':
         sys.exit(2)
 
     updater = telegram.ext.Updater(BOT_TOKEN)
-    analytics_handler = analytics.AnalyticsHandler()
 
     try:
         ADMIN_USER_ID = config.getint('Telegram', 'Admin')
-
-        if not cli_args.debug:
-            analytics_handler.googleToken = config.get('Google', 'Key')
     except configparser.Error as config_error:
         logger.warning(f'Config error: {config_error}')
-
-    analytics_handler.userAgent = BOT_NAME
 
     main()
